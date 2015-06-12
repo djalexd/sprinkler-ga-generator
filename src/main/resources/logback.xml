@@ -1,0 +1,21 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.house.sprinklers.Renderer" level="info"/>
+    <logger name="org.house.sprinklers.SprinklerGARunner" level="info"/>
+    <logger name="org.house.sprinklers.GameLogic" level="info"/>
+    <logger name="org.house.sprinklers.population.PopulationSimulator" level="info"/>
+    <logger name="org.house.sprinklers.fitness.FitnessInputCalculator" level="warn"/>
+    <logger name="org.house.sprinklers.genetics.RandomMutation" level="info"/>
+
+    <root level="warn">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
