@@ -1,41 +1,43 @@
-package org.house.sprinklers.sprinkler_system;
+package org.house.sprinklers.sprinkler_system.terrain;
 
+import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.house.sprinklers.PolygonIntersect;
+import org.house.sprinklers.math.PolygonIntersect;
+import org.house.sprinklers.sprinkler_system.Loader;
+import org.house.sprinklers.math.Polygon;
 
 import java.awt.geom.Point2D;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Terrain implements Polygon {
 
-    private Point2D[] points;
-
-    private Point2D[][] innerPenaltyDomains;
+    private List<Point2D> points;
 
     private transient Double area = null;
 
     public double getArea() {
 
         if (area == null) {
-            area = PolygonIntersect.intersectionArea(points, points);
-            for (Point2D[] penalty : innerPenaltyDomains) {
+            area = PolygonIntersect.intersectionArea(this, this);
+            /*for (Point2D[] penalty : innerPenaltyDomains) {
                 area -= PolygonIntersect.intersectionArea(penalty, penalty);
             }
+            */
         }
 
         return area;
     }
 
     @Override
-    public Point2D[] getPolygonPoints() {
+    public List<Point2D> getPolygonPoints() {
         return this.points;
     }
 
@@ -45,11 +47,11 @@ public class Terrain implements Polygon {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
             int numPoints = Integer.parseInt(reader.readLine());
-            Point2D[] points = new Point2D[numPoints];
+            List<Point2D> points = Lists.newArrayListWithExpectedSize(numPoints);
 
             for (int i = 0; i < numPoints; i++) {
                 String[] tokens = reader.readLine().split(" ");
-                points[i] = new Point2D.Double(Double.parseDouble(tokens[0]), Double.parseDouble(tokens[1]));
+                points.add(new Point2D.Double(Double.parseDouble(tokens[0]), Double.parseDouble(tokens[1])));
             }
 
             int numPenalties = Integer.parseInt(reader.readLine());
@@ -64,7 +66,8 @@ public class Terrain implements Polygon {
                 }
             }
 
-            return new Terrain(points, innerPenaltyPoints, null);
+            //return new Terrain(points, innerPenaltyPoints, null);
+            return new Terrain(points, null);
         }
     }
 }

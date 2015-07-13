@@ -8,7 +8,8 @@ import org.house.sprinklers.genetics.Mutation;
 import org.house.sprinklers.population.Population;
 import org.house.sprinklers.population.PopulationSimulator;
 import org.house.sprinklers.population.SprinklerValidator;
-import org.house.sprinklers.sprinkler_system.Terrain;
+import org.house.sprinklers.sprinkler_system.terrain.Terrain;
+import org.springframework.boot.actuate.metrics.GaugeService;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

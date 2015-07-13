@@ -13,7 +13,7 @@ import org.house.sprinklers.genetics.Mutation;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
 import org.house.sprinklers.sprinkler_system.SprinklerSystem;
 import org.house.sprinklers.sprinkler_system.SprinklerSystemGenome;
-import org.house.sprinklers.sprinkler_system.Terrain;
+import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -50,14 +50,14 @@ public class PopulationSimulator implements Callable<Population> {
     @Override
     public Population call() throws Exception {
 
-        log.info("Perform GA for population {}", currentPopulation.getPopulation().length);
+        log.info("Perform GA for population {}", currentPopulation.getPopulation().size());
 
         double currentPopulationFitness = 0.0;
-        Double[] fitnesses = new Double[currentPopulation.getPopulation().length];
+        Double[] fitnesses = new Double[currentPopulation.getPopulation().size()];
 
         /* Calculate fitness of each individual */
-        for (int i = 0; i < currentPopulation.getPopulation().length; i++) {
-            SprinklerSystem system = currentPopulation.getPopulation()[i];
+        for (int i = 0; i < currentPopulation.getPopulation().size(); i++) {
+            SprinklerSystem system = currentPopulation.getPopulation().get(i);
 
             FitnessInput input = fitnessInputCalculator.computeFitnessInput(system, terrain);
             final double fitness = fitnessCalculator.computeFitness(input);
@@ -66,12 +66,11 @@ public class PopulationSimulator implements Callable<Population> {
             fitnesses[i] = fitness;
             currentPopulationFitness += fitness;
 
-            log.debug("Fitness with {} sprinklers is {}", system.getSprinklers().length, fitness);
+            log.debug("Fitness with {} sprinklers is {}", system.getSprinklers().size(), fitness);
         }
 
-        log.info("Fitness of this population is {}, average fitness={}, most fit candidates={}", currentPopulationFitness,
-                String.format("%.2f", currentPopulationFitness / currentPopulation.getPopulation().length),
-                0);
+        log.info("Total fitness of this population is {}, average fitness={}", currentPopulationFitness,
+                String.format("%.2f", currentPopulationFitness / currentPopulation.getPopulation().size()));
 
         /* Perform selection */
         final SprinklerSystemGenome.GenomeStore store = new SprinklerSystemGenome.GenomeStore();
@@ -81,7 +80,7 @@ public class PopulationSimulator implements Callable<Population> {
 
         log.info("Average genome size of this population is {}", averagePopulationGenomeSize(currentPopulation));
 
-        int size = currentPopulation.getPopulation().length;
+        int size = currentPopulation.getPopulation().size();
         while (genomes.size() < expectedPopulationSize) {
             // Pick 2 random individuals, but different
             //
@@ -94,8 +93,8 @@ public class PopulationSimulator implements Callable<Population> {
 
             /* Crossover + mutation */
             SprinklerSystemGenome[] children = crossover.generateChildren(
-                    store.save(currentPopulation.getPopulation()[individual1]),
-                    store.save(currentPopulation.getPopulation()[individual2]));
+                    store.save(currentPopulation.getPopulation().get(individual1)),
+                    store.save(currentPopulation.getPopulation().get(individual2)));
 
             for (SprinklerSystemGenome g : children) {
                 SprinklerSystemGenome mutated = mutation.generateMutation(g);
@@ -109,31 +108,17 @@ public class PopulationSimulator implements Callable<Population> {
                     genomes.add(mutated);
                 } catch (InvalidSprinklerException e) {
                     // Do nothing
+                    log.warn("Mutated sprinkler system is no longer valid, skipping it.");
                 }
             }
         }
 
-        SprinklerSystem[] systems = new SprinklerSystem[genomes.size()];
+        List<SprinklerSystem> systems = Lists.newArrayList();
         for (int i = 0; i < genomes.size(); i++) {
-            systems[i] = loader.load(genomes.get(i));
+            systems.add(loader.load(genomes.get(i)));
         }
 
-        Population population = new Population(currentPopulation.getPopulation().length, false);
-        population.setPopulation(systems);
-        return population;
-    }
-
-    private Double[] mostFitCandidates(Double[] fitnesses, int i) {
-        List<Double> copy = Arrays.asList(fitnesses);
-        Collections.sort(copy, new Comparator<Double>() {
-            @Override
-            public int compare(Double o1, Double o2) {
-                return -1 * o1.compareTo(o2);
-            }
-        });
-
-        List<Double> subList = copy.subList(0, i);
-        return subList.toArray(new Double[subList.size()]);
+        return new Population(systems);
     }
 
     private Integer averagePopulationGenomeSize(Population currentPopulation) throws Exception {
@@ -145,7 +130,7 @@ public class PopulationSimulator implements Callable<Population> {
             genomeSize += store.save(system).getGenes().length;
         }
 
-        return genomeSize / currentPopulation.getPopulation().length;
+        return genomeSize / currentPopulation.getPopulation().size();
     }
 
 

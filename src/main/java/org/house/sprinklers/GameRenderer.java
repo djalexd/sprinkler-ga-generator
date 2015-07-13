@@ -1,7 +1,8 @@
 package org.house.sprinklers;
 
+import org.house.sprinklers.sprinkler_system.Sprinkler;
 import org.house.sprinklers.sprinkler_system.SprinklerSystem;
-import org.house.sprinklers.sprinkler_system.Terrain;
+import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
@@ -78,9 +79,9 @@ public class GameRenderer implements Runnable {
 
         // draw sprinklers
         GL11.glColor4f(0.4f, 0.0f, 1.0f, 0.3f);
-        for (int i = 0; i < sprinklerSystem.getSprinklers().length; i++) {
+        for (Sprinkler sprinkler : sprinklerSystem.getSprinklers()) {
             GL11.glBegin(GL11.GL_POLYGON);
-            for (Point2D p : sprinklerSystem.getSprinklers()[i].getPolygonPoints()) {
+            for (Point2D p : sprinkler.getPolygonPoints()) {
                 GL11.glVertex2d(SCALE * p.getX(), SCALE * p.getY());
             }
             GL11.glEnd();

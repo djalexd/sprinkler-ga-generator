@@ -1,19 +1,21 @@
 package org.house.sprinklers.fitness;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import de.lighti.clipper.*;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.house.sprinklers.PolygonIntersect;
-import org.house.sprinklers.sprinkler_system.Polygon;
+import org.house.sprinklers.math.PolygonIntersect;
+import org.house.sprinklers.math.Polygon;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
 import org.house.sprinklers.sprinkler_system.SprinklerSystem;
-import org.house.sprinklers.sprinkler_system.Terrain;
+import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import org.joda.time.DateTime;
 
 import java.awt.geom.Point2D;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.*;
 
 @Data
@@ -34,19 +36,19 @@ public class FitnessInputCalculator {
         double terrainArea = terrain.getArea(), covered = 0.0, overlap = 0.0, outside = 0.0;
         log.debug("Running sprinklers for terrain with total size {}", terrainArea);
 
-        final Sprinkler[] sprinklers = sprinklerSystem.getSprinklers();
+        final List<Sprinkler> sprinklers = sprinklerSystem.getSprinklers();
 
-        Polygon[] sprinklerIntersections = new Polygon[sprinklers.length];
-        double[] contribution = new double[sprinklers.length];
+        Polygon[] sprinklerIntersections = new Polygon[sprinklers.size()];
+        double[] contribution = new double[sprinklers.size()];
 
-        for (int i = 0; i < sprinklers.length; i++) {
-            Sprinkler s = sprinklers[i];
+        for (int i = 0; i < sprinklers.size(); i++) {
+            Sprinkler s = sprinklers.get(i);
             sprinklerIntersections[i] = intersection(s, terrain);
             log.debug("Intersection {} with terrain: {}",
                     i, intersectionArea(sprinklerIntersections[i]));
             contribution[i] = intersectionArea(sprinklerIntersections[i]);
 
-            outside += intersectionArea(sprinklers[i]);
+            outside += intersectionArea(sprinklers.get(i));
 
             double c = 0.0;
             for (int j = 0; j < i; j++) {
@@ -78,7 +80,7 @@ public class FitnessInputCalculator {
         log.debug("System run time    = {} millis", end.getMillis() - start.getMillis());
 
         return FitnessInput.builder()
-                .numSprinklers(sprinklerSystem.getSprinklers().length)
+                .numSprinklers(sprinklerSystem.getSprinklers().size())
                 .terrainArea(terrainArea)
                 .coveredArea(covered)
                 .outsideArea(outside)
@@ -92,7 +94,7 @@ public class FitnessInputCalculator {
     }
 
     private double intersectionArea(Polygon a, Polygon b) {
-        return PolygonIntersect.intersectionArea(a.getPolygonPoints(), b.getPolygonPoints());
+        return PolygonIntersect.intersectionArea(a, b);
     }
 
     private Polygon intersection(final Polygon a, final Polygon b)
@@ -109,7 +111,7 @@ public class FitnessInputCalculator {
 
         } catch (TimeoutException e) {
             log.warn("Timeout when compute intersection between {} and {}", a, b);
-            return new SimplePolygon(new Point2D[0]);
+            return new SimplePolygon(Collections.<Point2D>emptyList());
 
         } catch (ExecutionException e) {
             throw new RuntimeException("This should not happen", e);
@@ -125,7 +127,7 @@ public class FitnessInputCalculator {
 
         // If either polygons contain no point (not even one), return
         // an empty polygon as well.
-        if (a.getPolygonPoints().length == 0 || b.getPolygonPoints().length == 0) {
+        if (a.getPolygonPoints().isEmpty() || b.getPolygonPoints().isEmpty()) {
             return Polygon.EMPTY;
         }
 
@@ -181,9 +183,10 @@ public class FitnessInputCalculator {
     }
 
     private Polygon convertToPolygon(Path path, double scale) {
-        Point2D[] points = new Point2D[path.size()];
+
+        List<Point2D> points = Lists.newArrayListWithExpectedSize(path.size());
         for (int i = 0; i < path.size(); i++) {
-            points[i] = new Point2D.Double(path.get(i).getX() / scale, path.get(i).getY() / scale);
+            points.add(new Point2D.Double(path.get(i).getX() / scale, path.get(i).getY() / scale));
         }
 
         return new SimplePolygon(points);
@@ -191,14 +194,14 @@ public class FitnessInputCalculator {
 
 
     static class SimplePolygon implements Polygon {
-        private Point2D[] points;
+        private List<Point2D> points;
 
-        public SimplePolygon(Point2D[] points) {
-            this.points = Arrays.copyOf(points, points.length);
+        public SimplePolygon(List<Point2D> points) {
+            this.points = ImmutableList.copyOf(points);
         }
 
         @Override
-        public Point2D[] getPolygonPoints() {
+        public List<Point2D> getPolygonPoints() {
             return this.points;
         }
 

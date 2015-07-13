@@ -2,7 +2,7 @@ package org.house.sprinklers.population;
 
 import com.google.common.base.Optional;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
-import org.house.sprinklers.sprinkler_system.Terrain;
+import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 
 import java.awt.*;
 import java.awt.geom.Point2D;

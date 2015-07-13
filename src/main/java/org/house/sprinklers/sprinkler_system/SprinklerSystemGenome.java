@@ -1,6 +1,8 @@
 package org.house.sprinklers.sprinkler_system;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.house.sprinklers.population.InvalidSprinklerException;
@@ -9,6 +11,7 @@ import org.house.sprinklers.population.SprinklerValidator;
 import java.awt.geom.Point2D;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
 @Data
 public class SprinklerSystemGenome {
@@ -31,10 +34,10 @@ public class SprinklerSystemGenome {
             int numSprinklers = genome.genes.length / 40;
             int invalidGenes = 0;
 
-            final Sprinkler[] sprinklers = new Sprinkler[numSprinklers];
-            log.info("Found {} sprinklers in genome of length {}", sprinklers.length, genome.genes.length);
+            final List<Sprinkler> sprinklers = Lists.newArrayListWithExpectedSize(numSprinklers);
+            log.info("Found {} sprinklers in genome of length {}", numSprinklers, genome.genes.length);
 
-            for (int i = 0; i < sprinklers.length; i++) {
+            for (int i = 0; i < numSprinklers; i++) {
                 int offset = 40 * i;
 
                 // Provide corrections to the model. If a specific value cannot be read,
@@ -47,15 +50,18 @@ public class SprinklerSystemGenome {
                             r = wrap.getDouble(offset + 16),
                             sa = wrap.getDouble(offset + 24),
                             ea = wrap.getDouble(offset + 32);
-                    sprinklers[i] = new Sprinkler(new Point2D.Double(x, y), r, sa, ea, null);
+                    Sprinkler sprinkler = new Sprinkler(new Point2D.Double(x, y), r, sa, ea, null);
 
                     // Perform validation of all data.
                     if (sprinklerValidator.isPresent()) {
                         try {
-                            sprinklerValidator.get().validate(sprinklers[i]);
+                            sprinklerValidator.get().validate(sprinkler);
+                            sprinklers.add(sprinkler);
                         } catch (InvalidSprinklerException e) {
                             throw new InvalidGeneException(e);
                         }
+                    } else {
+                        sprinklers.add(sprinkler);
                     }
 
                 } catch (InvalidGeneException e) {
@@ -72,10 +78,9 @@ public class SprinklerSystemGenome {
             if (invalidGenes > 0) {
                 log.info("Found {} invalid genes, the overall genome was reduced from {} to {} genes", invalidGenes,
                         genome.genes.length, genome.genes.length - invalidGenes * 40);
-                return new SprinklerSystem(Arrays.copyOfRange(sprinklers, 0, sprinklers.length - invalidGenes));
-            } else {
-                return new SprinklerSystem(sprinklers);
             }
+
+            return new SprinklerSystem(sprinklers);
         }
     }
 
@@ -83,20 +88,21 @@ public class SprinklerSystemGenome {
     public static class GenomeStore implements Store<SprinklerSystem, SprinklerSystemGenome> {
         @Override
         public SprinklerSystemGenome save(SprinklerSystem sprinklerSystem) throws Exception {
-            final Sprinkler[] sprinklers = sprinklerSystem.getSprinklers();
+            final List<Sprinkler> sprinklers = sprinklerSystem.getSprinklers();
 
-            int numGenes = 40 * sprinklers.length;
+            int numGenes = 40 * sprinklers.size();
 
             log.info("Store sprinkler system in genome generated {} genes", numGenes);
 
             ByteBuffer wrap = ByteBuffer.allocate(numGenes);
-            for (int i = 0 ; i < sprinklers.length; i++) {
+            for (int i = 0 ; i < sprinklers.size(); i++) {
                 int offset = 40 * i;
-                wrap.putDouble(offset, sprinklers[i].getPosition().getX());
-                wrap.putDouble(offset + 8, sprinklers[i].getPosition().getY());
-                wrap.putDouble(offset + 16, sprinklers[i].getRange());
-                wrap.putDouble(offset + 24, sprinklers[i].getStartAngle());
-                wrap.putDouble(offset + 32, sprinklers[i].getEndAngle());
+
+                wrap.putDouble(offset, sprinklers.get(i).getPosition().getX());
+                wrap.putDouble(offset + 8, sprinklers.get(i).getPosition().getY());
+                wrap.putDouble(offset + 16, sprinklers.get(i).getRange());
+                wrap.putDouble(offset + 24, sprinklers.get(i).getStartAngle());
+                wrap.putDouble(offset + 32, sprinklers.get(i).getEndAngle());
             }
 
             return new SprinklerSystemGenome(wrap.array());

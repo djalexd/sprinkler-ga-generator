@@ -1,4 +1,4 @@
-package org.house.sprinklers;
+package org.house.sprinklers.math;
 
 /* PolygonIntersect.java
  *
@@ -24,6 +24,12 @@ public class PolygonIntersect {
     {
         PolygonIntersect polygonIntersect = new PolygonIntersect();
         return polygonIntersect.inter(a, b);
+    }
+
+    public static double intersectionArea(Polygon a, Polygon b) {
+        Point2D[] toPointsA = a.getPolygonPoints().toArray(new Point2D[a.getPolygonPoints().size()]);
+        Point2D[] toPointsB = b.getPolygonPoints().toArray(new Point2D[b.getPolygonPoints().size()]);
+        return intersectionArea(toPointsA, toPointsB);
     }
 
     //--------------------------------------------------------------------------
