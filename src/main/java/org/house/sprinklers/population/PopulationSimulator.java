@@ -52,6 +52,8 @@ public class PopulationSimulator implements Callable<Population> {
 
         log.info("Perform GA for population {}", currentPopulation.getPopulation().size());
 
+        log.info("Step1. Perform fitness for all candidates");
+
         double currentPopulationFitness = 0.0;
         Double[] fitnesses = new Double[currentPopulation.getPopulation().size()];
 

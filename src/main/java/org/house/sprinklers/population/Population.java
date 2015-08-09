@@ -42,7 +42,7 @@ public class Population {
 
     private SprinklerSystem randomSprinklerSystem(Optional<SprinklerValidator> validator) {
         // Random count of sprinklers
-        int numSprinklers = random.nextInt(10);
+        int numSprinklers = 2 + random.nextInt(10);
         List<Sprinkler> sprinklers = Lists.newArrayListWithExpectedSize(numSprinklers);
         for (int i = 0; i < numSprinklers; i++) {
 
@@ -56,6 +56,8 @@ public class Population {
                         validator.get().validate(aRandomSprinkler);
                         found = true;
                         sprinklers.add(aRandomSprinkler);
+
+                        log.debug("Generated random sprinkler {}", aRandomSprinkler);
 
                     } catch (InvalidSprinklerException e) {
                         // Thrown if sprinkler is invalid, this means the sprinkler was

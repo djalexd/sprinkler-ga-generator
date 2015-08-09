@@ -8,6 +8,7 @@
         </encoder>
     </appender>
 
+    <logger name="org.house.sprinklers" level="debug"/>
     <logger name="org.house.sprinklers.Renderer" level="info"/>
     <logger name="org.house.sprinklers.SprinklerGARunner" level="info"/>
     <logger name="org.house.sprinklers.GameLogic" level="info"/>

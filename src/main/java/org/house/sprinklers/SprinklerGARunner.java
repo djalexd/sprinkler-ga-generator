@@ -17,7 +17,7 @@ public class SprinklerGARunner {
         System.setProperty("org.lwjgl.librarypath", "/Users/alexdobjanschi/workspace/sprinkler-ga-generator/target/natives");
 
         ApplicationContext appCtx = new AnnotationConfigApplicationContext(
-                SprinklerConfiguration.class, SprinklerRenderConfiguration.class);
+                SprinklerGARunner.class.getPackage().getName());
 
         ExecutorService executor = appCtx.getBean(ExecutorService.class);
 
@@ -25,7 +25,7 @@ public class SprinklerGARunner {
 
         SprinklerValidator validator = appCtx.getBean(SprinklerValidator.class);
 
-        int populationSize = 100;
+        int populationSize = 10;
         final Population population = new Population(populationSize, false);
         population.initializePopulation(Optional.of(validator));
 

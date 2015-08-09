@@ -67,7 +67,7 @@ public class SprinklerConfiguration {
     @Bean
     GameLogic gameLogic() throws Exception {
         return new GameLogic(
-                100,
+                10,
                 terrain(),
                 fitnessInputCalculator(),
                 fitnessCalculator(),
