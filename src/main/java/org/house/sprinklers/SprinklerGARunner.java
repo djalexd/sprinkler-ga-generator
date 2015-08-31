@@ -26,7 +26,7 @@ public class SprinklerGARunner {
         SprinklerValidator validator = appCtx.getBean(SprinklerValidator.class);
 
         int populationSize = 10;
-        final Population population = new Population(populationSize, false);
+        final Population population = new Population(populationSize, true);
         population.initializePopulation(Optional.of(validator));
 
         gameLogic.setInitialPopulation(population);

@@ -2,6 +2,7 @@ package org.house.sprinklers.genetics;
 
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
+import org.house.sprinklers.sprinkler_system.SprinklerSystem;
 import org.house.sprinklers.sprinkler_system.SprinklerSystemGenome;
 
 import java.util.Arrays;
@@ -10,7 +11,7 @@ import java.util.Random;
 @Slf4j
 public class RandomMutation implements Mutation {
     private static final double DEFAULT_CHANGE = 0.001;
-    private static final Random random = new Random(561263L);
+    private static final Random random = new Random();
 
     private final double chance;
 
@@ -20,6 +21,11 @@ public class RandomMutation implements Mutation {
     public RandomMutation(double chance) {
         Preconditions.checkArgument(chance > 0.0, "Mutation chance must be positive");
         this.chance = chance;
+    }
+
+    @Override
+    public SprinklerSystem generateMutation(SprinklerSystem original) {
+        return original;
     }
 
     @Override

@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.house.sprinklers.math.Polygon;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import java.awt.geom.Point2D;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +17,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = "areaPolygons")
+@ValidSprinkler(
+        minRange = 2,
+        maxRange = 8)
 public class Sprinkler implements Polygon {
 
     private static final double SPLIT_ANGLE = 0.1;

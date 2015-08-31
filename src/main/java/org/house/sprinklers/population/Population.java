@@ -15,7 +15,7 @@ import java.util.Random;
 @Data
 public class Population {
 
-    private static final Random random = new Random(7983L);
+    private static final Random random = new Random();
 
     private List<SprinklerSystem> population;
     private int expectedSize;

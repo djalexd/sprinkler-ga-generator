@@ -28,7 +28,7 @@ public class SprinklerSystemGenome {
         }
 
         @Override
-        public SprinklerSystem load(SprinklerSystemGenome genome) throws Exception {
+        public SprinklerSystem load(SprinklerSystemGenome genome) {
             ByteBuffer wrap = ByteBuffer.wrap(genome.genes);
 
             int numSprinklers = genome.genes.length / 40;
@@ -87,7 +87,7 @@ public class SprinklerSystemGenome {
     @Slf4j
     public static class GenomeStore implements Store<SprinklerSystem, SprinklerSystemGenome> {
         @Override
-        public SprinklerSystemGenome save(SprinklerSystem sprinklerSystem) throws Exception {
+        public SprinklerSystemGenome save(SprinklerSystem sprinklerSystem) {
             final List<Sprinkler> sprinklers = sprinklerSystem.getSprinklers();
 
             int numGenes = 40 * sprinklers.size();
