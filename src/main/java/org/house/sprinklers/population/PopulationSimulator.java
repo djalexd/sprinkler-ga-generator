@@ -102,7 +102,7 @@ public class PopulationSimulator implements Callable<Population> {
 
         for (final SprinklerSystem sprinklerSystem : currentPopulation.getPopulation()) {
 
-            final FitnessInput input = fitnessInputCalculator.computeFitnessInput(sprinklerSystem, terrain);
+            final FitnessInput input = fitnessInputCalculator.computeFitnessInput(sprinklerSystem.getSprinklers(), terrain);
             final double fitness = fitnessCalculator.computeFitness(input);
 
             internalList.add(new SprinklerSystemFitness(sprinklerSystem, fitness));

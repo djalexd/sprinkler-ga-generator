@@ -1,118 +1,134 @@
 package org.house.sprinklers;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
-import org.apache.commons.math3.genetics.AbstractListChromosome;
-import org.apache.commons.math3.genetics.BinaryChromosome;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.genetics.Chromosome;
 import org.apache.commons.math3.genetics.ElitisticListPopulation;
 import org.apache.commons.math3.genetics.FixedGenerationCount;
 import org.apache.commons.math3.genetics.GeneticAlgorithm;
-import org.apache.commons.math3.genetics.OnePointCrossover;
+import org.apache.commons.math3.genetics.OnePointVariableLengthCrossover;
 import org.apache.commons.math3.genetics.Population;
-import org.apache.commons.math3.genetics.RandomKeyMutation;
+import org.apache.commons.math3.genetics.RandomGeneMutation;
 import org.apache.commons.math3.genetics.StoppingCondition;
 import org.apache.commons.math3.genetics.TournamentSelection;
+import org.house.sprinklers.fitness.FitnessCalculator;
+import org.house.sprinklers.fitness.FitnessInputCalculator;
+import org.house.sprinklers.genetics.SprinklersChromosome;
 import org.house.sprinklers.population.InvalidSprinklerException;
 import org.house.sprinklers.population.SprinklerValidator;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
 import org.house.sprinklers.sprinkler_system.SprinklerSystem;
+import org.house.sprinklers.sprinkler_system.terrain.Terrain;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+@Slf4j
 public class SprinklerCommonsGARunner {
 
     private static final Random random = new Random();
-    private static final int NUM_GENERATIONS = 5;
+    private static final int NUM_GENERATIONS = 100;
     private static final int TOURNAMENT_ARITY = 2;
 
     public static void main(String[] args) {
+        // UI stuff
+        System.setProperty("org.lwjgl.librarypath", "/Users/alexdobjanschi/workspace/sprinkler-ga-generator/target/natives");
+
+        // Read a couple of Beans
+        ApplicationContext appCtx = new AnnotationConfigApplicationContext(
+                SprinklerGARunner.class.getPackage().getName());
+
+        // initial population
+        final SprinklerValidator sprinklerValidator = appCtx.getBean(SprinklerValidator.class);
 
         // initialize a new genetic algorithm
-        GeneticAlgorithm ga = new GeneticAlgorithm(
-                new OnePointCrossover<Integer>(),
+        @SuppressWarnings("unchecked")
+        final GeneticAlgorithm ga = new GeneticAlgorithm(
+                new OnePointVariableLengthCrossover<Sprinkler>(),
                 1,
-                new RandomKeyMutation(),
+                new RandomGeneMutation(() -> randomValidSprinkler(sprinklerValidator)),
                 0.10,
                 new TournamentSelection(TOURNAMENT_ARITY)
         );
 
-        // initial population
-        Population initial = getInitialPopulation();
+        final Population initial = getInitialPopulation(
+                50, 200,
+                sprinklerValidator,
+                appCtx.getBean(FitnessCalculator.class),
+                appCtx.getBean(FitnessInputCalculator.class),
+                appCtx.getBean(Terrain.class));
 
         // stopping condition
         StoppingCondition stopCond = new FixedGenerationCount(NUM_GENERATIONS);
 
+        final long start = System.currentTimeMillis();
+
         // run the algorithm
-        Population finalPopulation = ga.evolve(initial, stopCond);
+        final Population finalPopulation = ga.evolve(initial, stopCond);
 
         // best chromosome from the final population
-        Chromosome bestFinal = finalPopulation.getFittestChromosome();
+        final SprinklersChromosome fittestChromosome = (SprinklersChromosome) finalPopulation.getFittestChromosome();
 
+        final long end = System.currentTimeMillis();
+
+        log.info("Best chromosome after {} generations, computed in {} ms: {}", NUM_GENERATIONS, end - start, fittestChromosome);
+
+        //
+        GameRenderer gm = appCtx.getBean(GameRenderer.class);
+        gm.setSprinklerSystem(new SprinklerSystem(fittestChromosome.getRepresentation()));
+
+        //final ExecutorService executorService = appCtx.getBean(ExecutorService.class);
+        //executorService.submit(gm);
+
+        gm.run();
+
+        //executorService.awaitTermination()
     }
 
-    private static Population getInitialPopulation(SprinklerValidator validator) {
+    private static Population getInitialPopulation(final int populationInitialSize,
+                                                   final int populationLimit,
+                                                   SprinklerValidator validator,
+                                                   FitnessCalculator fitnessCalculator,
+                                                   FitnessInputCalculator fitnessInputCalculator,
+                                                   Terrain terrain) {
 
-        final int chromosomeCount = 10;
-        final List<Chromosome> chromosomes = new ArrayList<>(chromosomeCount);
-        for (int i = 0; i < 10; i++) {
-            final SprinklerSystem system = randomSprinklerSystem(Optional.of(validator));
-            chromosomes.add(new BinaryChromosome(sprinklerSystemRepresentation(system)) {
-                @Override
-                public AbstractListChromosome<Integer> newFixedLengthChromosome(List<Integer> chromosomeRepresentation) {
-                    return null;
-                }
+        final Chromosome[] chromosomes = new Chromosome[populationInitialSize];
+        Arrays.setAll(chromosomes, i -> randomChromosome(validator, fitnessCalculator, fitnessInputCalculator, terrain));
+        return new ElitisticListPopulation(Arrays.asList(chromosomes), populationLimit, 0.9);
+    }
 
-                @Override
-                public double fitness() {
-                    return 0;
-                }
-            });
+
+    private static SprinklersChromosome randomChromosome(SprinklerValidator validator, FitnessCalculator fitnessCalculator, FitnessInputCalculator fitnessInputCalculator, Terrain terrain) {
+        return new SprinklersChromosome(randomSprinklers(validator), validator, fitnessCalculator, fitnessInputCalculator, terrain);
+    }
+
+    private static List<Sprinkler> randomSprinklers(SprinklerValidator validator) {
+        // Random count of sprinklers
+        final Sprinkler[] sprinklers = new Sprinkler[3 + random.nextInt(10)];
+
+        if (validator != null) {
+            Arrays.setAll(sprinklers, i -> randomValidSprinkler(validator));
+        } else {
+            Arrays.setAll(sprinklers, i -> randomSprinkler());
         }
 
-        //final ElitisticListPopulation population = new ElitisticListPopulation()
-
-
-        return null;
+        return Arrays.asList(sprinklers);
     }
 
-
-    private static List<Integer> sprinklerSystemRepresentation(SprinklerSystem sprinklerSystem) {
-
-    }
-
-
-    private static SprinklerSystem randomSprinklerSystem(Optional<SprinklerValidator> validator) {
-        // Random count of sprinklers
-        int numSprinklers = 2 + random.nextInt(10);
-        List<Sprinkler> sprinklers = Lists.newArrayListWithExpectedSize(numSprinklers);
-        for (int i = 0; i < numSprinklers; i++) {
-
-            boolean found = false;
-
-            if (validator.isPresent()) {
-
-                while (!found) {
-                    Sprinkler aRandomSprinkler = randomSprinkler();
-                    try {
-                        validator.get().validate(aRandomSprinkler);
-                        found = true;
-                        sprinklers.add(aRandomSprinkler);
-                    } catch (InvalidSprinklerException e) {
-                        // Thrown if sprinkler is invalid, this means the sprinkler was
-                        // not found yet (it's not even valid.
-                    }
-                }
-
-            } else {
-                sprinklers.add(randomSprinkler());
+    private static Sprinkler randomValidSprinkler(SprinklerValidator validator) {
+        while (true) {
+            Sprinkler aRandomSprinkler = randomSprinkler();
+            try {
+                validator.validate(aRandomSprinkler);
+                return aRandomSprinkler;
+            } catch (InvalidSprinklerException e) {
+                // Thrown if sprinkler is invalid, this means the sprinkler was
+                // not found yet (it's not even valid.
             }
         }
-
-        return new SprinklerSystem(sprinklers);
     }
 
     private static Sprinkler randomSprinkler() {

@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.house.sprinklers.math.PolygonIntersect;
 import org.house.sprinklers.math.Polygon;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
-import org.house.sprinklers.sprinkler_system.SprinklerSystem;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import org.joda.time.DateTime;
 
@@ -29,14 +28,12 @@ public class FitnessInputCalculator {
 
     private final ExecutorService executorService;
 
-    public FitnessInput computeFitnessInput(SprinklerSystem sprinklerSystem, Terrain terrain) throws InterruptedException {
+    public FitnessInput computeFitnessInput(final List<Sprinkler> sprinklers, Terrain terrain) throws InterruptedException {
 
         DateTime start = DateTime.now();
 
         double terrainArea = terrain.getArea(), covered = 0.0, overlap = 0.0, outside = 0.0;
         log.debug("Running sprinklers for terrain with total size {}", terrainArea);
-
-        final List<Sprinkler> sprinklers = sprinklerSystem.getSprinklers();
 
         Polygon[] sprinklerIntersections = new Polygon[sprinklers.size()];
         double[] contribution = new double[sprinklers.size()];
@@ -80,7 +77,7 @@ public class FitnessInputCalculator {
         log.debug("System run time    = {} millis", end.getMillis() - start.getMillis());
 
         return FitnessInput.builder()
-                .numSprinklers(sprinklerSystem.getSprinklers().size())
+                .numSprinklers(sprinklers.size())
                 .terrainArea(terrainArea)
                 .coveredArea(covered)
                 .outsideArea(outside)
