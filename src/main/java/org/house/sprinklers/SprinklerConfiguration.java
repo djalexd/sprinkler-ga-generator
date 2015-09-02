@@ -1,13 +1,16 @@
 package org.house.sprinklers;
 
-import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import org.house.sprinklers.fitness.FitnessCalculator;
 import org.house.sprinklers.fitness.FitnessInputCalculator;
 import org.house.sprinklers.fitness.SimpleFitnessCalculator;
 import org.house.sprinklers.population.CommonSenseSprinklerValidator;
+import org.house.sprinklers.population.CompositeSprinklerValidator;
 import org.house.sprinklers.population.SprinklerValidator;
+import org.house.sprinklers.population.TerrainSprinklerValidator;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.InputStream;
@@ -44,9 +47,9 @@ public class SprinklerConfiguration {
 
     @Bean
     SprinklerValidator sprinklerValidator() throws Exception {
-
-        Optional<Terrain> terrainOptional = Optional.of(terrain());
-
-        return new CommonSenseSprinklerValidator(terrainOptional);
+        return new CompositeSprinklerValidator(ImmutableSet.of(
+                        new CommonSenseSprinklerValidator(),
+                        new TerrainSprinklerValidator(terrain()))
+        );
     }
 }
