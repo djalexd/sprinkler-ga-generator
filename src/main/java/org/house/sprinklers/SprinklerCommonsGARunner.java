@@ -39,7 +39,7 @@ public class SprinklerCommonsGARunner {
 
         // Read a couple of Beans
         ApplicationContext appCtx = new AnnotationConfigApplicationContext(
-                SprinklerGARunner.class.getPackage().getName());
+                SprinklerCommonsGARunner.class.getPackage().getName());
 
         // initial population
         final SprinklerValidator sprinklerValidator = appCtx.getBean(SprinklerValidator.class);
@@ -51,8 +51,7 @@ public class SprinklerCommonsGARunner {
                 1,
                 new RandomGeneMutation(() -> randomValidSprinkler(sprinklerValidator)),
                 0.10,
-                new TournamentSelection(TOURNAMENT_ARITY)
-        );
+                new TournamentSelection(TOURNAMENT_ARITY));
 
         final Population initial = getInitialPopulation(
                 50, 200,

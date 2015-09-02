@@ -11,8 +11,6 @@
     <logger name="org.house.sprinklers" level="debug"/>
     <logger name="org.house.sprinklers.Renderer" level="info"/>
     <logger name="org.house.sprinklers.SprinklerGARunner" level="info"/>
-    <logger name="org.house.sprinklers.GameLogic" level="info"/>
-    <logger name="org.house.sprinklers.population.PopulationSimulator" level="info"/>
     <logger name="org.house.sprinklers.fitness.FitnessInputCalculator" level="warn"/>
     <logger name="org.house.sprinklers.genetics.RandomMutation" level="info"/>
 

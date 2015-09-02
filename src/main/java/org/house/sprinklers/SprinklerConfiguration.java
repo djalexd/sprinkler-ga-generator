@@ -4,10 +4,6 @@ import com.google.common.base.Optional;
 import org.house.sprinklers.fitness.FitnessCalculator;
 import org.house.sprinklers.fitness.FitnessInputCalculator;
 import org.house.sprinklers.fitness.SimpleFitnessCalculator;
-import org.house.sprinklers.genetics.Crossover;
-import org.house.sprinklers.genetics.CutAndSpliceCrossover;
-import org.house.sprinklers.genetics.Mutation;
-import org.house.sprinklers.genetics.RandomMutation;
 import org.house.sprinklers.population.CommonSenseSprinklerValidator;
 import org.house.sprinklers.population.SprinklerValidator;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
@@ -33,7 +29,7 @@ public class SprinklerConfiguration {
     }
 
     private static InputStream resourceAsStream(String byName) {
-        return SprinklerGARunner.class.getResourceAsStream(byName);
+        return SprinklerConfiguration.class.getResourceAsStream(byName);
     }
 
     @Bean
@@ -52,28 +48,5 @@ public class SprinklerConfiguration {
         Optional<Terrain> terrainOptional = Optional.of(terrain());
 
         return new CommonSenseSprinklerValidator(terrainOptional);
-    }
-
-    @Bean
-    Crossover crossover() {
-        return new CutAndSpliceCrossover();
-    }
-
-    @Bean
-    Mutation mutation() {
-        return new RandomMutation();
-    }
-
-    @Bean
-    GameLogic gameLogic() throws Exception {
-        return new GameLogic(
-                10,
-                terrain(),
-                fitnessInputCalculator(),
-                fitnessCalculator(),
-                sprinklerValidator(),
-                crossover(),
-                mutation(),
-                executor());
     }
 }

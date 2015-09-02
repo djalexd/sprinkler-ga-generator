@@ -32,7 +32,7 @@ public class RandomGeneMutation<T> implements MutationPolicy {
         int rInd = GeneticAlgorithm.getRandomGenerator().nextInt(repr.size());
 
         List<T> newRepr = new ArrayList<>(repr);
-        newRepr.set(rInd, geneGenerator.generateRandomValue());
+        newRepr.set(rInd, geneGenerator.generateRandomGene());
 
         return originalRk.newFixedLengthChromosome(newRepr);
     }
