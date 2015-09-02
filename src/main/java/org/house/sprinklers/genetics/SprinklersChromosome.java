@@ -14,7 +14,8 @@ import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import java.util.List;
 
 /**
- * Chromosome representation of a {@link org.house.sprinklers.sprinkler_system.SprinklerSystem}.
+ * Chromosome representation using a list of
+ * {@link org.house.sprinklers.sprinkler_system.Sprinkler sprinklers}.
  */
 public class SprinklersChromosome extends AbstractListChromosome<Sprinkler> {
 

@@ -17,9 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = "areaPolygons")
-@ValidSprinkler(
-        minRange = 2,
-        maxRange = 8)
 public class Sprinkler implements Polygon {
 
     private static final double SPLIT_ANGLE = 0.1;

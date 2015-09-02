@@ -16,7 +16,6 @@ import org.house.sprinklers.genetics.SprinklersChromosome;
 import org.house.sprinklers.population.InvalidSprinklerException;
 import org.house.sprinklers.population.SprinklerValidator;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
-import org.house.sprinklers.sprinkler_system.SprinklerSystem;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -77,7 +76,7 @@ public class SprinklerCommonsGARunner {
 
         //
         GameRenderer gm = appCtx.getBean(GameRenderer.class);
-        gm.setSprinklerSystem(new SprinklerSystem(fittestChromosome.getRepresentation()));
+        gm.setSprinklers(fittestChromosome.getRepresentation());
 
         //final ExecutorService executorService = appCtx.getBean(ExecutorService.class);
         //executorService.submit(gm);

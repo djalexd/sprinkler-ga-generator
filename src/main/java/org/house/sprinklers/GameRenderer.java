@@ -1,7 +1,6 @@
 package org.house.sprinklers;
 
 import org.house.sprinklers.sprinkler_system.Sprinkler;
-import org.house.sprinklers.sprinkler_system.SprinklerSystem;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -10,6 +9,7 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.geom.Point2D;
+import java.util.List;
 
 public class GameRenderer implements Runnable {
     private static final double SCALE = 50;
@@ -24,10 +24,10 @@ public class GameRenderer implements Runnable {
         this.terrain = terrain;
     }
 
-    private volatile SprinklerSystem sprinklerSystem;
+    private volatile List<Sprinkler> sprinklers = null;
 
-    public void setSprinklerSystem(SprinklerSystem sprinklerSystem) {
-        this.sprinklerSystem = sprinklerSystem;
+    public void setSprinklers(List<Sprinkler> sprinklers) {
+        this.sprinklers = sprinklers;
     }
 
     @Override
@@ -73,13 +73,13 @@ public class GameRenderer implements Runnable {
     }
 
     private void drawSprinklerSystem() {
-        if (sprinklerSystem == null) {
+        if (sprinklers == null || sprinklers.isEmpty()) {
             return;
         }
 
         // draw sprinklers
         GL11.glColor4f(0.4f, 0.0f, 1.0f, 0.3f);
-        for (Sprinkler sprinkler : sprinklerSystem.getSprinklers()) {
+        for (Sprinkler sprinkler : sprinklers) {
             GL11.glBegin(GL11.GL_POLYGON);
             for (Point2D p : sprinkler.getPolygonPoints()) {
                 GL11.glVertex2d(SCALE * p.getX(), SCALE * p.getY());
