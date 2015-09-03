@@ -8,6 +8,7 @@ import org.apache.commons.math3.genetics.GeneticAlgorithm;
 import org.apache.commons.math3.genetics.OnePointVariableLengthCrossover;
 import org.apache.commons.math3.genetics.Population;
 import org.apache.commons.math3.genetics.RandomGeneMutation;
+import org.apache.commons.math3.genetics.SmallChangeGeneGenerator;
 import org.apache.commons.math3.genetics.StoppingCondition;
 import org.apache.commons.math3.genetics.TournamentSelection;
 import org.house.sprinklers.fitness.FitnessCalculator;
@@ -24,6 +25,7 @@ import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Function;
 
 @Slf4j
 public class SprinklerCommonsGARunner {
@@ -42,13 +44,15 @@ public class SprinklerCommonsGARunner {
 
         // initial population
         final SprinklerValidator sprinklerValidator = appCtx.getBean(SprinklerValidator.class);
+        // Generates
+        final Function<Sprinkler, Sprinkler> geneGenerator = new SmallChangeGeneGenerator(sprinklerValidator);
 
         // initialize a new genetic algorithm
         @SuppressWarnings("unchecked")
         final GeneticAlgorithm ga = new GeneticAlgorithm(
                 new OnePointVariableLengthCrossover<Sprinkler>(),
                 1,
-                new RandomGeneMutation(() -> randomValidSprinkler(sprinklerValidator)),
+                new RandomGeneMutation(geneGenerator),
                 0.10,
                 new TournamentSelection(TOURNAMENT_ARITY));
 
@@ -134,7 +138,6 @@ public class SprinklerCommonsGARunner {
                 new Point2D.Double(10 * random.nextDouble(), 10 * random.nextDouble()),
                 10 * random.nextDouble(),
                 Math.PI * 2 * random.nextDouble(),
-                Math.PI * 2 * random.nextDouble(),
-                null);
+                Math.PI * 2 * random.nextDouble());
     }
 }

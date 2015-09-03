@@ -1,21 +1,19 @@
 package org.house.sprinklers.sprinkler_system;
 
 import com.google.common.collect.Lists;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.house.sprinklers.math.Polygon;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import java.awt.geom.Point2D;
 import java.util.Collections;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = "areaPolygons")
 @ToString(exclude = "areaPolygons")
 public class Sprinkler implements Polygon {
 
@@ -30,6 +28,13 @@ public class Sprinkler implements Polygon {
     private double endAngle;
 
     private List<Point2D> areaPolygons = null;
+
+    public Sprinkler(Point2D position, double range, double startAngle, double endAngle) {
+        this.position = position;
+        this.range = range;
+        this.startAngle = startAngle;
+        this.endAngle = endAngle;
+    }
 
     @Override
     public List<Point2D> getPolygonPoints() {

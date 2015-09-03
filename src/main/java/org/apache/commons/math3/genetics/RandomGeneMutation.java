@@ -5,15 +5,16 @@ import org.apache.commons.math3.exception.util.LocalizedFormats;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
- * Mutates a chromosome based on {@link GeneGenerator}
+ * Mutates a chromosome based on {@link java.util.function.Function}
  */
 public class RandomGeneMutation<T> implements MutationPolicy {
 
-    private GeneGenerator<T> geneGenerator;
+    private Function<T, T> geneGenerator;
 
-    public RandomGeneMutation(GeneGenerator<T> geneGenerator) {
+    public RandomGeneMutation(Function<T, T> geneGenerator) {
         this.geneGenerator = geneGenerator;
     }
 
@@ -32,7 +33,7 @@ public class RandomGeneMutation<T> implements MutationPolicy {
         int rInd = GeneticAlgorithm.getRandomGenerator().nextInt(repr.size());
 
         List<T> newRepr = new ArrayList<>(repr);
-        newRepr.set(rInd, geneGenerator.generateRandomGene());
+        newRepr.set(rInd, geneGenerator.apply(repr.get(rInd)));
 
         return originalRk.newFixedLengthChromosome(newRepr);
     }

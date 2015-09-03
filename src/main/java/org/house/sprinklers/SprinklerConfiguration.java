@@ -52,4 +52,9 @@ public class SprinklerConfiguration {
                         new TerrainSprinklerValidator(terrain()))
         );
     }
+
+    @Bean
+    GameRenderer gameRenderer(Terrain terrain) {
+        return new GameRenderer(terrain);
+    }
 }
