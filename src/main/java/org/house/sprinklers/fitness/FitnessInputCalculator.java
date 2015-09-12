@@ -3,21 +3,22 @@ package org.house.sprinklers.fitness;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import de.lighti.clipper.*;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.house.sprinklers.math.PolygonIntersect;
 import org.house.sprinklers.math.Polygon;
+import org.house.sprinklers.metrics.MetricsConstants;
+import org.house.sprinklers.metrics.RecorderService;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
-import org.joda.time.DateTime;
 
 import java.awt.geom.Point2D;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
 
-@Data
 @Slf4j
 public class FitnessInputCalculator {
 
@@ -26,11 +27,19 @@ public class FitnessInputCalculator {
         CLIPPER.set(new DefaultClipper());
     }
 
-    private final ExecutorService executorService;
+    private ExecutorService executorService;
+
+    private RecorderService recorderService;
+
+    public FitnessInputCalculator(final ExecutorService executorService,
+                                  final RecorderService recorderService) {
+        this.executorService = executorService;
+        this.recorderService = recorderService;
+    }
 
     public FitnessInput computeFitnessInput(final List<Sprinkler> sprinklers, Terrain terrain) throws InterruptedException {
 
-        DateTime start = DateTime.now();
+        final Instant start = Instant.now();
 
         double terrainArea = terrain.getArea(), covered = 0.0, overlap = 0.0, outside = 0.0;
         log.debug("Running sprinklers for terrain with total size {}", terrainArea);
@@ -39,8 +48,10 @@ public class FitnessInputCalculator {
         double[] contribution = new double[sprinklers.size()];
 
         for (int i = 0; i < sprinklers.size(); i++) {
-            Sprinkler s = sprinklers.get(i);
-            sprinklerIntersections[i] = intersection(s, terrain);
+
+            final Instant sprinklerStart = Instant.now();
+
+            sprinklerIntersections[i] = intersection(sprinklers.get(i), terrain);
             log.debug("Intersection {} with terrain: {}",
                     i, intersectionArea(sprinklerIntersections[i]));
             contribution[i] = intersectionArea(sprinklerIntersections[i]);
@@ -62,19 +73,28 @@ public class FitnessInputCalculator {
 
             covered += contribution[i];
             overlap += c;
+
+            final Instant sprinklerEnd = Instant.now();
+
+            recorderService.submit(MetricsConstants.METRIC_SPRINKLER_TERRAIN_INTERSECTION,
+                    Duration.between(sprinklerStart, sprinklerEnd).getNano());
+            recorderService.increment(MetricsConstants.COUNTER_SPRINKLER_TERRAIN_INTERSECTIONS);
         }
 
         outside = Math.max(0, outside - covered);
 
-        DateTime end = DateTime.now();
+        Instant end = Instant.now();
 
-        log.info("Sprinkler system run -- terrain={}, covered={}, overlap={}, outside={}, time={}",
-                terrainArea, covered, overlap, outside, end.getMillis() - start.getMillis());
-        log.debug("Sprinkler system run --");
-        log.debug("Total terrain area = {}", terrainArea);
-        log.debug("Covered area       = {} ({}%)", covered, String.format("%.2f", 100.0 * covered / terrainArea));
-        log.debug("Overlap area       = {} ({}%)", overlap, String.format("%.2f", 100.0 * overlap / terrainArea));
-        log.debug("System run time    = {} millis", end.getMillis() - start.getMillis());
+        if (log.isInfoEnabled()) {
+            log.info("Sprinkler system run -- terrain={}, covered={}, overlap={}, outside={}, nanos={}",
+                    terrainArea, covered, overlap, outside, Duration.between(start, end).getNano());
+        } else if (log.isDebugEnabled()) {
+            log.debug("Sprinkler system run --");
+            log.debug("Total terrain area = {}", terrainArea);
+            log.debug("Covered area       = {} ({}%)", covered, String.format("%.2f", 100.0 * covered / terrainArea));
+            log.debug("Overlap area       = {} ({}%)", overlap, String.format("%.2f", 100.0 * overlap / terrainArea));
+            log.debug("System run time    = {} nanos", Duration.between(start, end).getNano());
+        }
 
         return FitnessInput.builder()
                 .numSprinklers(sprinklers.size())
@@ -107,7 +127,8 @@ public class FitnessInputCalculator {
             }).get(500, TimeUnit.MILLISECONDS);
 
         } catch (TimeoutException e) {
-            log.warn("Timeout when compute intersection between {} and {}", a, b);
+            log.debug("Timeout when compute intersection between {} and {}", a, b);
+            recorderService.increment(MetricsConstants.COUNTER_SPRINKLER_TERRAIN_ERRORS_TIMEOUT);
             return new SimplePolygon(Collections.<Point2D>emptyList());
 
         } catch (ExecutionException e) {
@@ -143,8 +164,9 @@ public class FitnessInputCalculator {
         clipper.execute(clipType, solution);
 
         if (solution.size() > 1) {
-            log.warn("Polygons has multiple areas of intersection: {} (this should not happen!);" +
+            log.debug("Polygons has multiple areas of intersection: {} (this should not happen!);" +
                     " only the first one will be returned", solution.size());
+            recorderService.increment(MetricsConstants.COUNTER_SPRINKLER_TERRAIN_ERRORS_MULTIPLEAREAS);
         }
 
         if (solution.isEmpty()) {

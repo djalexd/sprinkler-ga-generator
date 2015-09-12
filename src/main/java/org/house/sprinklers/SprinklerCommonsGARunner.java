@@ -13,7 +13,12 @@ import org.apache.commons.math3.genetics.StoppingCondition;
 import org.apache.commons.math3.genetics.TournamentSelection;
 import org.house.sprinklers.fitness.FitnessCalculator;
 import org.house.sprinklers.fitness.FitnessInputCalculator;
+import org.house.sprinklers.genetics.ListeningGeneticAlgorithm;
+import org.house.sprinklers.genetics.PopulationListener;
 import org.house.sprinklers.genetics.SprinklersChromosome;
+import org.house.sprinklers.metrics.InMemorySprinklerMetricsExtractor;
+import org.house.sprinklers.metrics.MetricsConstants;
+import org.house.sprinklers.metrics.RecorderService;
 import org.house.sprinklers.population.InvalidSprinklerException;
 import org.house.sprinklers.population.SprinklerValidator;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
@@ -31,7 +36,7 @@ import java.util.function.Function;
 public class SprinklerCommonsGARunner {
 
     private static final Random random = new Random();
-    private static final int NUM_GENERATIONS = 100;
+    private static final int NUM_GENERATIONS = 2000;
     private static final int TOURNAMENT_ARITY = 2;
 
     public static void main(String[] args) {
@@ -39,22 +44,25 @@ public class SprinklerCommonsGARunner {
         System.setProperty("org.lwjgl.librarypath", "/Users/alexdobjanschi/workspace/sprinkler-ga-generator/target/natives");
 
         // Read a couple of Beans
-        ApplicationContext appCtx = new AnnotationConfigApplicationContext(
-                SprinklerCommonsGARunner.class.getPackage().getName());
+        ApplicationContext appCtx = new AnnotationConfigApplicationContext(SprinklerConfiguration.class);
 
         // initial population
         final SprinklerValidator sprinklerValidator = appCtx.getBean(SprinklerValidator.class);
+        final RecorderService recorderService = appCtx.getBean(RecorderService.class);
+        final PopulationListener populationListener = appCtx.getBean(PopulationListener.class);
         // Generates
         final Function<Sprinkler, Sprinkler> geneGenerator = new SmallChangeGeneGenerator(sprinklerValidator);
 
         // initialize a new genetic algorithm
         @SuppressWarnings("unchecked")
-        final GeneticAlgorithm ga = new GeneticAlgorithm(
+        final GeneticAlgorithm ga = new ListeningGeneticAlgorithm(
                 new OnePointVariableLengthCrossover<Sprinkler>(),
                 1,
                 new RandomGeneMutation(geneGenerator),
                 0.10,
-                new TournamentSelection(TOURNAMENT_ARITY));
+                new TournamentSelection(TOURNAMENT_ARITY),
+                recorderService,
+                populationListener);
 
         final Population initial = getInitialPopulation(
                 50, 200,
@@ -85,6 +93,28 @@ public class SprinklerCommonsGARunner {
         //final ExecutorService executorService = appCtx.getBean(ExecutorService.class);
         //executorService.submit(gm);
 
+        // Display statistics
+        final String separator = "----------------------------";
+        final InMemorySprinklerMetricsExtractor extractor = appCtx.getBean(InMemorySprinklerMetricsExtractor.class);
+        log.info("[Terrain-Sprinkler ops] Total number = {} / Total exec time = {} millis / average exec time = {} millis",
+                extractor.numberOfTerrainSprinklerOps(),
+                extractor.totalExecTimeTerrainSprinklerOps(),
+                extractor.averageExecTimeTerrainSprinklerOps());
+        log.info("{}", separator);
+        log.info("[Genetic algorithm] Generations count = {} / Total individuals = {}",
+                extractor.generationsCount(),
+                extractor.totalIndividualsCount());
+        log.info("{}", separator);
+        log.info("[Errors] {}", extractor.getErrors());
+
+        log.info("{}", separator);
+        log.info("[Fitness over generations]");
+        recorderService.getMetricValues(MetricsConstants.METRIC_GA_GENERATION_FITNESS)
+                .stream()
+                .forEach(v -> {
+                    log.info("{}", v);
+                });
+
         gm.run();
 
         //executorService.awaitTermination()
@@ -99,7 +129,7 @@ public class SprinklerCommonsGARunner {
 
         final Chromosome[] chromosomes = new Chromosome[populationInitialSize];
         Arrays.setAll(chromosomes, i -> randomChromosome(validator, fitnessCalculator, fitnessInputCalculator, terrain));
-        return new ElitisticListPopulation(Arrays.asList(chromosomes), populationLimit, 0.9);
+        return new ElitisticListPopulation(Arrays.asList(chromosomes), populationLimit, 0.5);
     }
 
 
