@@ -1,7 +1,9 @@
 package org.house.sprinklers.genetics;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.genetics.Chromosome;
 import org.apache.commons.math3.genetics.Population;
+import org.house.sprinklers.GameRenderer;
 import org.house.sprinklers.fitness.FitnessInput;
 import org.house.sprinklers.metrics.GenerationAndValue;
 import org.house.sprinklers.metrics.MetricsConstants;
@@ -9,12 +11,16 @@ import org.house.sprinklers.metrics.RecorderService;
 
 import java.util.stream.StreamSupport;
 
+@Slf4j
 public class DefaultPopulationListener implements PopulationListener {
 
     private RecorderService recorderService;
+    private GameRenderer gameRenderer;
 
-    public DefaultPopulationListener(RecorderService recorderService) {
+    public DefaultPopulationListener(RecorderService recorderService, GameRenderer gameRenderer) {
         this.recorderService = recorderService;
+        // TODO This is a bad dependency
+        this.gameRenderer = gameRenderer;
     }
 
     @SuppressWarnings("unchecked")
@@ -41,5 +47,9 @@ public class DefaultPopulationListener implements PopulationListener {
         recorderService.submit(MetricsConstants.METRIC_GA_GENERATION_COVERED_AREA,
                 new GenerationAndValue(generation, generationCoveredArea));
 
+        final SprinklersChromosome fittestChromosome = (SprinklersChromosome) current.getFittestChromosome();
+        gameRenderer.setSprinklers(fittestChromosome.getRepresentation());
+
+        log.info("Completed generation {}", generation);
     }
 }
