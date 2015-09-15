@@ -11,6 +11,9 @@ geneticAlgorithm:
 
     mutationRate: 0.1
 
+    crossover:
+        minimumLength: 0
+
     # Percentage of current population, most fit individuals
     # that get copied immediately to the next generation
     elitismRate: 0.5

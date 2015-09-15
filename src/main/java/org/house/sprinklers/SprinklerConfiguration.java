@@ -150,9 +150,12 @@ public class SprinklerConfiguration {
         return new RandomGeneMutation<>(geneGenerator());
     }
 
+    @Value("${geneticAlgorithm.crossover.minimumLength}")
+    private int crossoverMinimumAllowedLength;
+
     @Bean
     CrossoverPolicy crossover() {
-        return new OnePointVariableLengthCrossover<>();
+        return new OnePointVariableLengthCrossover<>(crossoverMinimumAllowedLength);
     }
 
     @SuppressWarnings("unchecked")
@@ -192,7 +195,7 @@ public class SprinklerConfiguration {
 
     private static List<Sprinkler> randomSprinklers(Function<Sprinkler, Sprinkler> geneGenerator) {
         // Random count of sprinklers
-        final Sprinkler[] sprinklers = new Sprinkler[3 + randomGenerator.nextInt(10)];
+        final Sprinkler[] sprinklers = new Sprinkler[1 + randomGenerator.nextInt(10)];
         Arrays.setAll(sprinklers, i -> geneGenerator.apply(null));
         return Arrays.asList(sprinklers);
     }
