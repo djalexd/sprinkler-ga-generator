@@ -5,19 +5,23 @@ import org.apache.commons.math3.genetics.FixedGenerationCount;
 import org.apache.commons.math3.genetics.GeneticAlgorithm;
 import org.apache.commons.math3.genetics.Population;
 import org.house.sprinklers.genetics.SprinklersChromosome;
+import org.house.sprinklers.metrics.GenerationAndValue;
 import org.house.sprinklers.metrics.InMemorySprinklerMetricsExtractor;
 import org.house.sprinklers.metrics.MetricsConstants;
 import org.house.sprinklers.metrics.RecorderService;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class SprinklerCommonsGARunner {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
         // UI stuff
         System.setProperty("org.lwjgl.librarypath", "/Users/alexdobjanschi/workspace/sprinkler-ga-generator/target/natives");
 
@@ -37,7 +41,8 @@ public class SprinklerCommonsGARunner {
 
         final Population initial = appCtx.getBean(Population.class);
 
-        final int numGenerations = Integer.valueOf(appCtx.getEnvironment().getProperty("geneticAlgorithm.generations"));
+        final GeneticAlgorithmProperties properties = appCtx.getBean(GeneticAlgorithmProperties.class);
+        final int numGenerations = properties.getGenerations();
 
         final long start = System.currentTimeMillis();
 
@@ -67,13 +72,23 @@ public class SprinklerCommonsGARunner {
         log.info("[Errors] {}", extractor.getErrors());
 
         log.info("{}", separator);
-        log.info("[Fitness over generations]");
-        recorderService.getMetricValues(MetricsConstants.METRIC_GA_GENERATION_FITNESS)
-                .stream()
-                .forEach(v -> {
-                    log.info("{}", v);
-                });
+        exportAsCSV("/Users/alexdobjanschi/generation-fitness.csv", recorderService, MetricsConstants.METRIC_GA_GENERATION_FITNESS);
 
         executorService.awaitTermination(100, TimeUnit.MINUTES);
+    }
+
+
+    private static void exportAsCSV(String fileName, RecorderService recorderService, String metricName) throws IOException {
+        List<GenerationAndValue> values = recorderService.getMetricValues(metricName);
+
+        try(final FileWriter out = new FileWriter(fileName)) {
+            values.stream().forEach(v -> {
+                try {
+                    out.write(v.getGeneration() + "," + v.getValue() + System.getProperty("line.separator"));
+                } catch (IOException e) {
+                    throw new RuntimeException("Lambdas don't handle checked", e);
+                }
+            });
+        }
     }
 }

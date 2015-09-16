@@ -58,8 +58,8 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
     private Sprinkler generateMutatedValidSprinkler(Sprinkler original) {
         // All fields can be changed, but individually
         final boolean[] newFields = new boolean[] {
-                randomGenerator.nextBoolean(),
-                randomGenerator.nextBoolean(),
+                randomGenerator.nextInt(6) < 5,
+                randomGenerator.nextInt(6) < 5,
                 randomGenerator.nextBoolean(),
                 randomGenerator.nextBoolean(),
                 randomGenerator.nextBoolean()

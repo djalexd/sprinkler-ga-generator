@@ -28,25 +28,13 @@ import org.house.sprinklers.population.SprinklerValidator;
 import org.house.sprinklers.population.TerrainSprinklerValidator;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
 import org.house.sprinklers.sprinkler_system.terrain.Terrain;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.env.YamlPropertySourceLoader;
-import org.springframework.context.EnvironmentAware;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.MutablePropertySources;
-import org.springframework.core.env.PropertySource;
-import org.springframework.core.io.ClassPathResource;
 
-import javax.inject.Inject;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -55,46 +43,28 @@ import java.util.function.Function;
 
 @Configuration
 @ComponentScan
-// TODO Can I do this?
-/*@org.springframework.context.annotation.PropertySource("ga.yaml")*/
+@EnableConfigurationProperties
+@org.springframework.context.annotation.PropertySource("classpath:ga.properties")
 public class SprinklerConfiguration {
+
     private static RandomGenerator randomGenerator = new JDKRandomGenerator();
 
-    private @Inject Environment environment;
-
-    static PropertySource yamlPropertySource() throws IOException {
-        // todo really, environment is injected but we don't read
-        // all possible files in order. Long way of saying I'm lazy
-        final String yamlResource = "ga.yaml";
-        return new YamlPropertySourceLoader().load(yamlResource, new ClassPathResource(yamlResource), null);
-    }
-
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() throws IOException {
-        final MutablePropertySources sources = new MutablePropertySources();
-        sources.addFirst(yamlPropertySource());
-
-        final EnvironmentAwarePropertySourcesPlaceholderConfigurer placeholderConfigurer = new EnvironmentAwarePropertySourcesPlaceholderConfigurer();
-        placeholderConfigurer.propertySources = sources;
-        return placeholderConfigurer;
-    }
-
-    @Value("${executors.threadPool}")
-    private int nThreads;
+    @Autowired
+    private GeneticAlgorithmProperties geneticAlgorithmProperties;
+    @Autowired
+    private ExecutorProperties executorProperties;
+    @Autowired
+    private TerrainProperties terrainProperties;
 
     @Bean
     ExecutorService executor() {
-        return Executors.newFixedThreadPool(nThreads);
+        return Executors.newFixedThreadPool(executorProperties.getNThreads());
     }
-
-    @Value("${terrain.data}")
-    private String terrainResource;
 
     @Bean
     Terrain terrain() {
         try {
-            return new Terrain.TerrainLoader().load(new ClassPathResource(terrainResource).getInputStream());
+            return new Terrain.TerrainLoader().load(terrainProperties.terrainAsResource().getInputStream());
         } catch (IOException e) {
             throw new RuntimeException("Unable to load Terrain", e);
         }
@@ -133,13 +103,6 @@ public class SprinklerConfiguration {
         return new DefaultPopulationListener(recorderService(), gameRenderer());
     }
 
-    @Value("${geneticAlgorithm.crossoverRate}")
-    private double crossoverRate;
-    @Value("${geneticAlgorithm.tournamentArity}")
-    private int tournamentArity;
-    @Value("${geneticAlgorithm.mutationRate}")
-    private double mutationRate;
-
     @Bean
     Function<Sprinkler, Sprinkler> geneGenerator() {
         return new SmallChangeGeneGenerator(sprinklerValidator());
@@ -150,12 +113,9 @@ public class SprinklerConfiguration {
         return new RandomGeneMutation<>(geneGenerator());
     }
 
-    @Value("${geneticAlgorithm.crossover.minimumLength}")
-    private int crossoverMinimumAllowedLength;
-
     @Bean
     CrossoverPolicy crossover() {
-        return new OnePointVariableLengthCrossover<>(crossoverMinimumAllowedLength);
+        return new OnePointVariableLengthCrossover<>(geneticAlgorithmProperties.getCrossover().getMinimumLength());
     }
 
     @SuppressWarnings("unchecked")
@@ -163,26 +123,22 @@ public class SprinklerConfiguration {
     GeneticAlgorithm geneticAlgorithm() {
         return new ListeningGeneticAlgorithm(
                 crossover(),
-                crossoverRate,
+                geneticAlgorithmProperties.getCrossoverRate(),
                 mutation(),
-                mutationRate,
-                new TournamentSelection(tournamentArity),
+                geneticAlgorithmProperties.getMutationRate(),
+                new TournamentSelection(geneticAlgorithmProperties.getTournamentArity()),
                 recorderService(),
                 populationListener());
     }
 
-    @Value("${geneticAlgorithm.population.initialSize}")
-    private int populationInitialSize;
-    @Value("${geneticAlgorithm.population.maximumSize}")
-    private int populationLimit;
-    @Value("${geneticAlgorithm.elitismRate}")
-    private double elitismRate;
-
     @Bean
     Population initialPopulation() {
-        final Chromosome[] chromosomes = new Chromosome[populationInitialSize];
+        final Chromosome[] chromosomes = new Chromosome[geneticAlgorithmProperties.getPopulation().getInitialSize()];
         Arrays.setAll(chromosomes, i -> randomChromosome(sprinklerValidator(), geneGenerator(), fitnessCalculator(), fitnessInputCalculator(), terrain()));
-        return new ElitisticListPopulation(Arrays.asList(chromosomes), populationLimit, elitismRate);
+        return new ElitisticListPopulation(
+                Arrays.asList(chromosomes),
+                geneticAlgorithmProperties.getPopulation().getMaximumSize(),
+                geneticAlgorithmProperties.getElitismRate());
     }
 
     private static SprinklersChromosome randomChromosome(final SprinklerValidator validator,
@@ -190,7 +146,12 @@ public class SprinklerConfiguration {
                                                          final FitnessCalculator fitnessCalculator,
                                                          final FitnessInputCalculator fitnessInputCalculator,
                                                          final Terrain terrain) {
-        return new SprinklersChromosome(randomSprinklers(geneGenerator), validator, fitnessCalculator, fitnessInputCalculator, terrain);
+        return new SprinklersChromosome(
+                randomSprinklers(geneGenerator),
+                validator,
+                fitnessCalculator,
+                fitnessInputCalculator,
+                terrain);
     }
 
     private static List<Sprinkler> randomSprinklers(Function<Sprinkler, Sprinkler> geneGenerator) {
@@ -198,30 +159,5 @@ public class SprinklerConfiguration {
         final Sprinkler[] sprinklers = new Sprinkler[1 + randomGenerator.nextInt(10)];
         Arrays.setAll(sprinklers, i -> geneGenerator.apply(null));
         return Arrays.asList(sprinklers);
-    }
-
-
-    private static class EnvironmentAwarePropertySourcesPlaceholderConfigurer extends PropertySourcesPlaceholderConfigurer
-        implements EnvironmentAware, InitializingBean {
-
-        MutablePropertySources propertySources;
-        ConfigurableEnvironment environment;
-
-        @Override
-        public void setEnvironment(Environment environment) {
-            super.setEnvironment(environment);
-            if (environment instanceof ConfigurableEnvironment) {
-                this.environment = (ConfigurableEnvironment) environment;
-            }
-        }
-
-        @Override
-        public void afterPropertiesSet() throws Exception {
-            if (environment == null) {
-                return;
-            }
-            final MutablePropertySources envPropertySources =  environment.getPropertySources();
-            propertySources.forEach(envPropertySources::addFirst);
-        }
     }
 }
