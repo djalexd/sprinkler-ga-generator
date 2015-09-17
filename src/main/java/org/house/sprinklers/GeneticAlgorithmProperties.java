@@ -1,7 +1,7 @@
 package org.house.sprinklers;
 
 import lombok.Data;
-import org.apache.commons.math3.genetics.GeneGeneratorConfiguration;
+import org.house.sprinklers.genetics.GeneGeneratorConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,6 +18,8 @@ public class GeneticAlgorithmProperties {
     private double mutationRate;
     @NotNull
     private CrossoverProperties crossover;
+    @NotNull
+    private ChromosomeProperties chromosome;
     private double elitismRate;
     @NotNull
     private PopulationProperties population;
@@ -33,5 +35,11 @@ public class GeneticAlgorithmProperties {
     public static class PopulationProperties {
         private int initialSize;
         private int maximumSize;
+    }
+
+    @Data
+    public static class ChromosomeProperties {
+        private int minLength;
+        private int maxLength;
     }
 }

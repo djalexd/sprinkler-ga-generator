@@ -9,7 +9,7 @@ import org.apache.commons.math3.genetics.MutationPolicy;
 import org.apache.commons.math3.genetics.OnePointVariableLengthCrossover;
 import org.apache.commons.math3.genetics.Population;
 import org.apache.commons.math3.genetics.RandomGeneMutation;
-import org.apache.commons.math3.genetics.SmallChangeGeneGenerator;
+import org.house.sprinklers.genetics.SmallChangeGeneGenerator;
 import org.apache.commons.math3.genetics.TournamentSelection;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -95,7 +95,11 @@ public class SprinklerConfiguration {
 
     @Bean
     MutationPolicy mutation() {
-        return new RandomGeneMutation<>(geneGenerator(), geneticAlgorithmProperties.getMutation(), recorderService());
+        return new RandomGeneMutation<>(
+                geneGenerator(),
+                geneticAlgorithmProperties.getMutation(),
+                geneticAlgorithmProperties.getChromosome(),
+                recorderService());
     }
 
     @Bean
@@ -126,7 +130,7 @@ public class SprinklerConfiguration {
                 geneticAlgorithmProperties.getElitismRate());
     }
 
-    private static SprinklersChromosome randomChromosome(final SprinklerValidator validator,
+    private SprinklersChromosome randomChromosome(final SprinklerValidator validator,
                                                          final Function<Sprinkler, Sprinkler> geneGenerator,
                                                          final FitnessCalculator fitnessCalculator,
                                                          final FitnessInputCalculator fitnessInputCalculator,
@@ -139,9 +143,10 @@ public class SprinklerConfiguration {
                 terrain);
     }
 
-    private static List<Sprinkler> randomSprinklers(Function<Sprinkler, Sprinkler> geneGenerator) {
+    private List<Sprinkler> randomSprinklers(Function<Sprinkler, Sprinkler> geneGenerator) {
         // Random count of sprinklers
-        final Sprinkler[] sprinklers = new Sprinkler[1 + randomGenerator.nextInt(10)];
+        final GeneticAlgorithmProperties.ChromosomeProperties props = geneticAlgorithmProperties.getChromosome();
+        final Sprinkler[] sprinklers = new Sprinkler[props.getMinLength() + randomGenerator.nextInt(props.getMaxLength() - props.getMinLength())];
         Arrays.setAll(sprinklers, i -> geneGenerator.apply(null));
         return Arrays.asList(sprinklers);
     }

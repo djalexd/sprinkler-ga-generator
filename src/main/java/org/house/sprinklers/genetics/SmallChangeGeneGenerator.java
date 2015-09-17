@@ -1,4 +1,4 @@
-package org.apache.commons.math3.genetics;
+package org.house.sprinklers.genetics;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.random.JDKRandomGenerator;

@@ -4,6 +4,8 @@ import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.house.sprinklers.GeneticAlgorithmProperties;
+import org.house.sprinklers.genetics.GeneGeneratorConfiguration;
 import org.house.sprinklers.metrics.MetricsConstants;
 import org.house.sprinklers.metrics.RecorderService;
 
@@ -30,13 +32,17 @@ public class RandomGeneMutation<T> implements MutationPolicy {
 
     private GeneGeneratorConfiguration config;
 
+    private GeneticAlgorithmProperties.ChromosomeProperties chromosomeConfig;
+
     private RecorderService recorderService;
 
     public RandomGeneMutation(Function<T, T> geneGenerator,
                               GeneGeneratorConfiguration config,
+                              GeneticAlgorithmProperties.ChromosomeProperties chromosomeConfig,
                               RecorderService recorderService) {
         this.geneGenerator = geneGenerator;
         this.config = config;
+        this.chromosomeConfig = chromosomeConfig;
         this.recorderService = recorderService;
     }
 
@@ -65,12 +71,13 @@ public class RandomGeneMutation<T> implements MutationPolicy {
             // Insert new genes at the end of chromosome.
             int newGenesCount = config.getMinGenesToInsert() +
                     randomGenerator.nextInt(config.getMaxGenesToInsert() - config.getMinGenesToInsert());
-            newRepr.addAll(
-                    IntStream.range(0, newGenesCount)
-                            .mapToObj(i -> geneGenerator.apply(null))
-                            .collect(Collectors.toList()));
-
-            recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_INSERT);
+            newGenesCount = Math.min(newGenesCount, chromosomeConfig.getMaxLength() - repr.size());
+            if (newGenesCount > 0) {
+                newRepr.addAll(IntStream.range(0, newGenesCount)
+                                .mapToObj(i -> geneGenerator.apply(null))
+                                .collect(Collectors.toList()));
+                recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_INSERT);
+            }
 
         } else if (prob < p2) {
             // Change existing genes.
@@ -80,20 +87,21 @@ public class RandomGeneMutation<T> implements MutationPolicy {
             Arrays.asList(generateUniqueIndices(repr.size(), changeGenesCount))
                     .stream()
                     .forEach(i -> newRepr.set(i, geneGenerator.apply(repr.get(i))));
-
             recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_CHANGE);
 
         } else if (prob < p3) {
             // Remove existing genes from anywhere in genome.
             int removeGenesCount = config.getMinGenesToRemove() +
                     randomGenerator.nextInt(config.getMaxGenesToRemove() - config.getMinGenesToRemove());
-            // special case here, we will remove from max index to min index.
-            final List<Integer> list = Arrays.asList(generateUniqueIndices(repr.size(), removeGenesCount));
-            Collections.sort(list);
-            Collections.reverse(list);
-            list.stream().forEach(newRepr::remove);
-
-            recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_DELETE);
+            removeGenesCount = Math.min(removeGenesCount, repr.size() - chromosomeConfig.getMinLength());
+            if (removeGenesCount > 0) {
+                // special case here, we will remove from max index to min index.
+                final List<Integer> list = Arrays.asList(generateUniqueIndices(repr.size(), removeGenesCount));
+                Collections.sort(list);
+                Collections.reverse(list);
+                list.stream().forEach(newRepr::remove);
+                recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_DELETE);
+            }
         }
 
         return originalRk.newFixedLengthChromosome(newRepr);

@@ -1,4 +1,4 @@
-package org.apache.commons.math3.genetics;
+package org.house.sprinklers.genetics;
 
 import lombok.Data;
 import org.springframework.beans.factory.InitializingBean;

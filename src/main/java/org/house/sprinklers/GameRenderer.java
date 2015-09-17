@@ -16,7 +16,7 @@ public class GameRenderer implements Runnable {
 
     private volatile boolean running = true;
 
-    private Point2D.Double offset = new Point2D.Double();
+    private Point2D.Double offset = new Point2D.Double(50, 50);
 
     private Terrain terrain;
 
