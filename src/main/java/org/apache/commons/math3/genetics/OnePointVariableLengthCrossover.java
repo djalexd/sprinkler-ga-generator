@@ -4,6 +4,8 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.house.sprinklers.metrics.MetricsConstants;
+import org.house.sprinklers.metrics.RecorderService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +30,15 @@ public class OnePointVariableLengthCrossover<T> implements CrossoverPolicy {
 
     private final int minimumAllowedLength;
 
-    public OnePointVariableLengthCrossover(int minimumAllowedLength) {
+    private RecorderService recorderService;
+
+    public OnePointVariableLengthCrossover(int minimumAllowedLength, RecorderService recorderService) {
         this.minimumAllowedLength = minimumAllowedLength;
+        this.recorderService = recorderService;
     }
 
-    public OnePointVariableLengthCrossover() {
-        this(DEFAULT_MINIMUM_ALLOWED_LENGTH);
+    public OnePointVariableLengthCrossover(RecorderService recorderService) {
+        this(DEFAULT_MINIMUM_ALLOWED_LENGTH, recorderService);
     }
 
     @SuppressWarnings("unchecked")
@@ -54,6 +59,9 @@ public class OnePointVariableLengthCrossover<T> implements CrossoverPolicy {
         if (lengthParent1 < minimumAllowedLength || lengthParent2 < minimumAllowedLength) {
             throw new DimensionMismatchException(minLengthParents, minimumAllowedLength);
         }
+
+        // Now that we're sure a crossover is performed, increment counter
+        recorderService.increment(MetricsConstants.COUNTER_GA_CROSSOVERS);
 
         final RandomGenerator rnd = GeneticAlgorithm.getRandomGenerator();
 

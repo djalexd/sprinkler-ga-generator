@@ -170,6 +170,7 @@ public class FitnessInputCalculator {
         }
 
         if (solution.isEmpty()) {
+            recorderService.increment(MetricsConstants.COUNTER_SPRINKLER_TERRAIN_NO_INTERSECTION);
             return Polygon.EMPTY;
         } else {
             Collections.sort(solution, new Comparator<Path>() {

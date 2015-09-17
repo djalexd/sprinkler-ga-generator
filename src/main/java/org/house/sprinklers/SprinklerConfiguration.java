@@ -90,17 +90,17 @@ public class SprinklerConfiguration {
 
     @Bean
     Function<Sprinkler, Sprinkler> geneGenerator() {
-        return new SmallChangeGeneGenerator(sprinklerValidator(), geneticAlgorithmProperties.getMutation());
+        return new SmallChangeGeneGenerator(sprinklerValidator(), geneticAlgorithmProperties.getMutation(), recorderService());
     }
 
     @Bean
     MutationPolicy mutation() {
-        return new RandomGeneMutation<>(geneGenerator(), geneticAlgorithmProperties.getMutation());
+        return new RandomGeneMutation<>(geneGenerator(), geneticAlgorithmProperties.getMutation(), recorderService());
     }
 
     @Bean
     CrossoverPolicy crossover() {
-        return new OnePointVariableLengthCrossover<>(geneticAlgorithmProperties.getCrossover().getMinimumLength());
+        return new OnePointVariableLengthCrossover<>(geneticAlgorithmProperties.getCrossover().getMinimumLength(), recorderService());
     }
 
     @SuppressWarnings("unchecked")

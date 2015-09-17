@@ -69,7 +69,17 @@ public class SprinklerCommonsGARunner {
                 extractor.generationsCount(),
                 extractor.totalIndividualsCount());
         log.info("{}", separator);
-        log.info("[Errors] {}", extractor.getErrors());
+        log.info("[Counters]");
+        recorderService
+                .filterMetrics("counter.")
+                .stream()
+                .forEach(m -> log.info("{} -> {}", m.getName(), m.getValue()));
+        log.info("{}", separator);
+        log.info("[Errors]");
+        recorderService
+                .filterMetrics("errors.")
+                .stream()
+                .forEach(m -> log.info("{} -> {}", m.getName(), m.getValue()));
 
         log.info("{}", separator);
         exportAsCSV("/Users/alexdobjanschi/generation-fitness.csv", recorderService, MetricsConstants.METRIC_GA_GENERATION_FITNESS);

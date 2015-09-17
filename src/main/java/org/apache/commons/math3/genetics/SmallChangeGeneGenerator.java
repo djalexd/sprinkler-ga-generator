@@ -3,6 +3,8 @@ package org.apache.commons.math3.genetics;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.house.sprinklers.metrics.MetricsConstants;
+import org.house.sprinklers.metrics.RecorderService;
 import org.house.sprinklers.population.InvalidSprinklerException;
 import org.house.sprinklers.population.SprinklerValidator;
 import org.house.sprinklers.sprinkler_system.Sprinkler;
@@ -39,10 +41,14 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
 
     private GeneGeneratorConfiguration geneGeneratorConfiguration;
 
+    private RecorderService recorderService;
+
     public SmallChangeGeneGenerator(final SprinklerValidator sprinklerValidator,
-                                    final GeneGeneratorConfiguration geneGeneratorConfiguration) {
+                                    final GeneGeneratorConfiguration geneGeneratorConfiguration,
+                                    final RecorderService recorderService) {
         this.sprinklerValidator = sprinklerValidator;
         this.geneGeneratorConfiguration = geneGeneratorConfiguration;
+        this.recorderService = recorderService;
     }
 
     @Override
@@ -96,6 +102,7 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
                     if (attempts > WARNING_COUNTER) {
                         log.warn("Unable to find valid value for field {} in {} attempts. Solution is: {}",
                                 i, attempts, Arrays.toString(solution));
+                        recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_CHANGE_ERRORS_IMPOSSIBLE);
                         // Break the loop and continue with whatever value was before
                         found = true;
                     }

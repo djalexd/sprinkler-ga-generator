@@ -1,6 +1,7 @@
 package org.house.sprinklers.metrics;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Similar to {@link org.springframework.boot.actuate.metrics.CounterService} and/or
@@ -22,6 +23,11 @@ public interface RecorderService {
      * Retrieves value for given metric or provides default value.
      */
     <T extends Number> T getMetricValue(String metricName, T zero);
+
+    /**
+     * Retrieves numeric value metrics for given prefix.
+     */
+    <T extends Number> Set<Metric<T>> filterMetrics(String metricPrefix);
 
     /**
      * Increments a metric by 1

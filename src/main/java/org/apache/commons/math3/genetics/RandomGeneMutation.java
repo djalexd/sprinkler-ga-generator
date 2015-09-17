@@ -4,6 +4,8 @@ import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.house.sprinklers.metrics.MetricsConstants;
+import org.house.sprinklers.metrics.RecorderService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,10 +30,14 @@ public class RandomGeneMutation<T> implements MutationPolicy {
 
     private GeneGeneratorConfiguration config;
 
+    private RecorderService recorderService;
+
     public RandomGeneMutation(Function<T, T> geneGenerator,
-                              GeneGeneratorConfiguration config) {
+                              GeneGeneratorConfiguration config,
+                              RecorderService recorderService) {
         this.geneGenerator = geneGenerator;
         this.config = config;
+        this.recorderService = recorderService;
     }
 
     @SuppressWarnings("unchecked")
@@ -43,6 +49,8 @@ public class RandomGeneMutation<T> implements MutationPolicy {
             throw new MathIllegalArgumentException(LocalizedFormats.RANDOMKEY_MUTATION_WRONG_CLASS,
                     original.getClass().getSimpleName());
         }
+
+        recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS);
 
         final AbstractListChromosome<T> originalRk = (AbstractListChromosome<T>) original;
         final List<T> repr = originalRk.getRepresentation();
@@ -61,6 +69,9 @@ public class RandomGeneMutation<T> implements MutationPolicy {
                     IntStream.range(0, newGenesCount)
                             .mapToObj(i -> geneGenerator.apply(null))
                             .collect(Collectors.toList()));
+
+            recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_INSERT);
+
         } else if (prob < p2) {
             // Change existing genes.
             int changeGenesCount = config.getMinGenesToChange() +
@@ -69,6 +80,9 @@ public class RandomGeneMutation<T> implements MutationPolicy {
             Arrays.asList(generateUniqueIndices(repr.size(), changeGenesCount))
                     .stream()
                     .forEach(i -> newRepr.set(i, geneGenerator.apply(repr.get(i))));
+
+            recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_CHANGE);
+
         } else if (prob < p3) {
             // Remove existing genes from anywhere in genome.
             int removeGenesCount = config.getMinGenesToRemove() +
@@ -78,6 +92,8 @@ public class RandomGeneMutation<T> implements MutationPolicy {
             Collections.sort(list);
             Collections.reverse(list);
             list.stream().forEach(newRepr::remove);
+
+            recorderService.increment(MetricsConstants.COUNTER_GA_MUTATIONS_DELETE);
         }
 
         return originalRk.newFixedLengthChromosome(newRepr);

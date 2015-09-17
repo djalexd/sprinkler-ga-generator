@@ -4,7 +4,9 @@ import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class InMemoryRecorderService implements RecorderService {
 
@@ -59,6 +61,15 @@ public class InMemoryRecorderService implements RecorderService {
             }
             return (T) dataMap.get(metricName);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends Number> Set<Metric<T>> filterMetrics(String metricPrefix) {
+        return dataMap.keySet().stream()
+                .filter(k -> k.startsWith(metricPrefix))
+                .map(k -> new Metric<T>(k, (T) dataMap.get(k)))
+                .collect(Collectors.toSet());
     }
 
     @Override
