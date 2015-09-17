@@ -37,14 +37,17 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
 
     private SprinklerValidator sprinklerValidator;
 
-    public SmallChangeGeneGenerator(SprinklerValidator sprinklerValidator) {
+    private GeneGeneratorConfiguration geneGeneratorConfiguration;
+
+    public SmallChangeGeneGenerator(final SprinklerValidator sprinklerValidator,
+                                    final GeneGeneratorConfiguration geneGeneratorConfiguration) {
         this.sprinklerValidator = sprinklerValidator;
+        this.geneGeneratorConfiguration = geneGeneratorConfiguration;
     }
 
     @Override
     public Sprinkler apply(Sprinkler original) {
-        final boolean isNewGene = randomGenerator.nextBoolean();
-        if (original == null || isNewGene) {
+        if (original == null) {
             return generateValidSprinkler();
         } else {
             return generateMutatedValidSprinkler(original);
@@ -58,11 +61,11 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
     private Sprinkler generateMutatedValidSprinkler(Sprinkler original) {
         // All fields can be changed, but individually
         final boolean[] newFields = new boolean[] {
-                randomGenerator.nextInt(6) < 5,
-                randomGenerator.nextInt(6) < 5,
-                randomGenerator.nextBoolean(),
-                randomGenerator.nextBoolean(),
-                randomGenerator.nextBoolean()
+                randomGenerator.nextDouble() < geneGeneratorConfiguration.getProbabilityChangePosX(),
+                randomGenerator.nextDouble() < geneGeneratorConfiguration.getProbabilityChangePosY(),
+                randomGenerator.nextDouble() < geneGeneratorConfiguration.getProbabilityChangeRadius(),
+                randomGenerator.nextDouble() < geneGeneratorConfiguration.getProbabilityChangeAngleStart(),
+                randomGenerator.nextDouble() < geneGeneratorConfiguration.getProbabilityChangeAngleEnd()
         };
 
         final double[] fieldValues = new double[] {

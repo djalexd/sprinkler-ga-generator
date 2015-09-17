@@ -1,14 +1,16 @@
 package org.house.sprinklers;
 
 import lombok.Data;
+import org.apache.commons.math3.genetics.GeneGeneratorConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import javax.validation.constraints.NotNull;
 
+@Configuration
 @ConfigurationProperties(prefix = "geneticAlgorithm")
 @Data
-@Component
 public class GeneticAlgorithmProperties {
 
     private int generations;
@@ -20,6 +22,8 @@ public class GeneticAlgorithmProperties {
     private double elitismRate;
     @NotNull
     private PopulationProperties population;
+    @NotNull
+    private GeneGeneratorConfiguration mutation;
 
     @Data
     public static class CrossoverProperties {

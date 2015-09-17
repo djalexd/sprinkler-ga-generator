@@ -33,18 +33,17 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 @Configuration
 @ComponentScan
 @EnableConfigurationProperties
-@org.springframework.context.annotation.PropertySource("classpath:ga.properties")
+@PropertySource("classpath:ga.properties")
 public class SprinklerConfiguration {
 
     private static RandomGenerator randomGenerator = new JDKRandomGenerator();
@@ -52,23 +51,9 @@ public class SprinklerConfiguration {
     @Autowired
     private GeneticAlgorithmProperties geneticAlgorithmProperties;
     @Autowired
-    private ExecutorProperties executorProperties;
+    private Terrain terrain;
     @Autowired
-    private TerrainProperties terrainProperties;
-
-    @Bean
-    ExecutorService executor() {
-        return Executors.newFixedThreadPool(executorProperties.getNThreads());
-    }
-
-    @Bean
-    Terrain terrain() {
-        try {
-            return new Terrain.TerrainLoader().load(terrainProperties.terrainAsResource().getInputStream());
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to load Terrain", e);
-        }
-    }
+    private ExecutorService executorService;
 
     @Bean
     RecorderService recorderService() {
@@ -77,7 +62,7 @@ public class SprinklerConfiguration {
 
     @Bean
     FitnessInputCalculator fitnessInputCalculator() {
-        return new FitnessInputCalculator(executor(), recorderService());
+        return new FitnessInputCalculator(executorService, recorderService());
     }
 
     @Bean
@@ -88,14 +73,14 @@ public class SprinklerConfiguration {
     @Bean
     SprinklerValidator sprinklerValidator() {
         return new CompositeSprinklerValidator(ImmutableSet.of(
-                        new CommonSenseSprinklerValidator(),
-                        new TerrainSprinklerValidator(terrain()))
+                new CommonSenseSprinklerValidator(),
+                new TerrainSprinklerValidator(terrain))
         );
     }
 
     @Bean
     GameRenderer gameRenderer() {
-        return new GameRenderer(terrain());
+        return new GameRenderer(terrain);
     }
 
     @Bean
@@ -105,12 +90,12 @@ public class SprinklerConfiguration {
 
     @Bean
     Function<Sprinkler, Sprinkler> geneGenerator() {
-        return new SmallChangeGeneGenerator(sprinklerValidator());
+        return new SmallChangeGeneGenerator(sprinklerValidator(), geneticAlgorithmProperties.getMutation());
     }
 
     @Bean
     MutationPolicy mutation() {
-        return new RandomGeneMutation<>(geneGenerator());
+        return new RandomGeneMutation<>(geneGenerator(), geneticAlgorithmProperties.getMutation());
     }
 
     @Bean
@@ -134,7 +119,7 @@ public class SprinklerConfiguration {
     @Bean
     Population initialPopulation() {
         final Chromosome[] chromosomes = new Chromosome[geneticAlgorithmProperties.getPopulation().getInitialSize()];
-        Arrays.setAll(chromosomes, i -> randomChromosome(sprinklerValidator(), geneGenerator(), fitnessCalculator(), fitnessInputCalculator(), terrain()));
+        Arrays.setAll(chromosomes, i -> randomChromosome(sprinklerValidator(), geneGenerator(), fitnessCalculator(), fitnessInputCalculator(), terrain));
         return new ElitisticListPopulation(
                 Arrays.asList(chromosomes),
                 geneticAlgorithmProperties.getPopulation().getMaximumSize(),

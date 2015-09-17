@@ -25,10 +25,11 @@ public class InMemorySprinklerMetricsExtractor {
 
     @SuppressWarnings("all")
     public double totalExecTimeTerrainSprinklerOps() {
+        final double invScale = 1.0 / 1000000;
         final List<Integer> execTimes = recorderService.getMetricValues(MetricsConstants.METRIC_SPRINKLER_TERRAIN_INTERSECTION);
         return execTimes.stream()
-                .mapToInt(x -> x)
-                .sum() / 1000000;
+                .mapToDouble(x -> x * invScale)
+                .sum();
     }
 
     public double averageExecTimeTerrainSprinklerOps() {
