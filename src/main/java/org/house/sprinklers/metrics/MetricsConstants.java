@@ -24,6 +24,9 @@ public final class MetricsConstants {
     public static final String METRIC_GA_GENERATION_FITNESS =
             "histogram.genetic-algorithm.fitness";
 
+    public static final String METRIC_GA_GENERATION_DIVERSITY =
+            "histogram.genetic-algorithm.diversity";
+
     public static final String METRIC_GA_GENERATION_COVERED_AREA =
             "histogram.genetic-algorithm.covered-area";
 

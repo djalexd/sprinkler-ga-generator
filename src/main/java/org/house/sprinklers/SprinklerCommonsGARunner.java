@@ -5,7 +5,7 @@ import org.apache.commons.math3.genetics.FixedGenerationCount;
 import org.apache.commons.math3.genetics.GeneticAlgorithm;
 import org.apache.commons.math3.genetics.Population;
 import org.house.sprinklers.genetics.SprinklersChromosome;
-import org.house.sprinklers.metrics.GenerationAndValue;
+import org.house.sprinklers.metrics.PopulationAndValue;
 import org.house.sprinklers.metrics.InMemorySprinklerMetricsExtractor;
 import org.house.sprinklers.metrics.MetricsConstants;
 import org.house.sprinklers.metrics.RecorderService;
@@ -73,18 +73,19 @@ public class SprinklerCommonsGARunner {
 
         log.info("{}", separator);
         exportAsCSV("/Users/alexdobjanschi/generation-fitness.csv", recorderService, MetricsConstants.METRIC_GA_GENERATION_FITNESS);
+        exportAsCSV("/Users/alexdobjanschi/generation-diversity.csv", recorderService, MetricsConstants.METRIC_GA_GENERATION_DIVERSITY);
 
         executorService.awaitTermination(100, TimeUnit.MINUTES);
     }
 
 
     private static void exportAsCSV(String fileName, RecorderService recorderService, String metricName) throws IOException {
-        List<GenerationAndValue> values = recorderService.getMetricValues(metricName);
+        List<PopulationAndValue> values = recorderService.getMetricValues(metricName);
 
         try(final FileWriter out = new FileWriter(fileName)) {
             values.stream().forEach(v -> {
                 try {
-                    out.write(v.getGeneration() + "," + v.getValue() + System.getProperty("line.separator"));
+                    out.write(v.getPopulationIndex() + "," + v.getValue() + System.getProperty("line.separator"));
                 } catch (IOException e) {
                     throw new RuntimeException("Lambdas don't handle checked", e);
                 }
