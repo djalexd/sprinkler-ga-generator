@@ -29,12 +29,22 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
 
     private static final RandomGenerator randomGenerator = new JDKRandomGenerator();
 
-    private static final DoubleSupplier[] functions = new DoubleSupplier[] {
+    private static final Double SMALL_ANGLE = Math.PI / 18;
+
+    private static final DoubleSupplier[] functions = {
             () -> 10 * randomGenerator.nextDouble(),
             () -> 10 * randomGenerator.nextDouble(),
             () -> 10 * randomGenerator.nextDouble(),
             () -> 2 * Math.PI * randomGenerator.nextDouble(),
             () -> 2 * Math.PI * randomGenerator.nextDouble()
+    };
+
+    private static final DoubleSupplier[] smallChangeFunctions = {
+            () -> -1 + 2 * randomGenerator.nextDouble(),
+            () -> -1 + 2 * randomGenerator.nextDouble(),
+            () -> -1 + 2 * randomGenerator.nextDouble(),
+            () -> -SMALL_ANGLE + 2 * SMALL_ANGLE * randomGenerator.nextDouble(),
+            () -> -SMALL_ANGLE + 2 * SMALL_ANGLE * randomGenerator.nextDouble()
     };
 
     private SprinklerValidator sprinklerValidator;
@@ -89,7 +99,7 @@ public class SmallChangeGeneGenerator implements Function<Sprinkler, Sprinkler> 
                 int attempts = 0;
                 while (!found) {
                     final double[] attempt = Arrays.copyOf(solution, solution.length);
-                    attempt[i] = functions[i].getAsDouble();
+                    attempt[i] += smallChangeFunctions[i].getAsDouble();
 
                     // Check that our slight modification still validates this gene.
                     final Sprinkler candidate = buildFromDoubles(attempt);

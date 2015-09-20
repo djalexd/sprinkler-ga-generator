@@ -7,6 +7,7 @@ public final class MetricsConstants {
     public static final String COUNTER_SPRINKLER_TERRAIN_INTERSECTIONS        = "counter.terrain-sprinkler.intersection";
     public static final String METRIC_SPRINKLER_TERRAIN_INTERSECTION          = "histogram.terrain-sprinkler.intersection";
     public static final String COUNTER_SPRINKLER_TERRAIN_ERRORS_TIMEOUT       = "errors.terrain-sprinkler.intersection.timeout";
+    public static final String COUNTER_SPRINKLER_TERRAIN_ERRORS_COMPUTATION   = "errors.terrain-sprinkler.intersection.computation";
     public static final String COUNTER_SPRINKLER_TERRAIN_ERRORS_MULTIPLEAREAS = "errors.terrain-sprinkler.intersection.multiple-intersection-areas";
     public static final String COUNTER_SPRINKLER_TERRAIN_NO_INTERSECTION      = "counter.terrain-sprinkler.no-intersection";
 

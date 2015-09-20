@@ -29,6 +29,9 @@ public class PolygonIntersect {
     public static double intersectionArea(Polygon a, Polygon b) {
         Point2D[] toPointsA = a.getPolygonPoints().toArray(new Point2D[a.getPolygonPoints().size()]);
         Point2D[] toPointsB = b.getPolygonPoints().toArray(new Point2D[b.getPolygonPoints().size()]);
+        if (toPointsA.length == 0 || toPointsB.length == 0) {
+            return 0;
+        }
         return intersectionArea(toPointsA, toPointsB);
     }
 

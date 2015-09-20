@@ -4,6 +4,7 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.house.sprinklers.GeneticAlgorithmProperties;
 import org.house.sprinklers.metrics.MetricsConstants;
 import org.house.sprinklers.metrics.RecorderService;
 
@@ -26,19 +27,20 @@ import java.util.List;
  */
 public class OnePointVariableLengthCrossover<T> implements CrossoverPolicy {
 
-    private static final int DEFAULT_MINIMUM_ALLOWED_LENGTH = 3;
+    private static final int MAX_ATTEMPTS = 50;
 
-    private final int minimumAllowedLength;
+    private GeneticAlgorithmProperties.CrossoverProperties crossoverProperties;
+
+    private GeneticAlgorithmProperties.ChromosomeProperties chromosomeProperties;
 
     private RecorderService recorderService;
 
-    public OnePointVariableLengthCrossover(int minimumAllowedLength, RecorderService recorderService) {
-        this.minimumAllowedLength = minimumAllowedLength;
+    public OnePointVariableLengthCrossover(GeneticAlgorithmProperties.CrossoverProperties crossoverProperties,
+                                           GeneticAlgorithmProperties.ChromosomeProperties chromosomeProperties,
+                                           RecorderService recorderService) {
+        this.crossoverProperties = crossoverProperties;
+        this.chromosomeProperties = chromosomeProperties;
         this.recorderService = recorderService;
-    }
-
-    public OnePointVariableLengthCrossover(RecorderService recorderService) {
-        this(DEFAULT_MINIMUM_ALLOWED_LENGTH, recorderService);
     }
 
     @SuppressWarnings("unchecked")
@@ -53,6 +55,7 @@ public class OnePointVariableLengthCrossover<T> implements CrossoverPolicy {
     private ChromosomePair crossover(final AbstractListChromosome<T> first,
                                      final AbstractListChromosome<T> second) throws DimensionMismatchException {
         // select a crossover point at random (0 and length makes no sense)
+        final int minimumAllowedLength = crossoverProperties.getMinimumLength();
         final int lengthParent1 = first.getLength(),
                   lengthParent2 = second.getLength(),
                   minLengthParents = Math.min(lengthParent1, lengthParent2);
@@ -65,8 +68,34 @@ public class OnePointVariableLengthCrossover<T> implements CrossoverPolicy {
 
         final RandomGenerator rnd = GeneticAlgorithm.getRandomGenerator();
 
+        /*
         final int crossoverIndexParent1 = rnd.nextInt(lengthParent1),
                   crossoverIndexParent2 = rnd.nextInt(lengthParent2);
+        */
+
+        int crossoverIndexParent1, crossoverIndexParent2;
+        int counter = 0;
+        while (true) {
+            crossoverIndexParent1 = rnd.nextInt(lengthParent1);
+            crossoverIndexParent2 = rnd.nextInt(lengthParent2);
+
+            int l1 = crossoverIndexParent1 + lengthParent2 - crossoverIndexParent2,
+                    l2 = crossoverIndexParent2 + lengthParent1 - crossoverIndexParent1;
+
+            // Validate bounds, if min/max are valid, we have found valid crossover points.
+            if (l1 > chromosomeProperties.getMinLength() && l1 < chromosomeProperties.getMaxLength() &&
+                    l2 > chromosomeProperties.getMinLength() && l2 < chromosomeProperties.getMaxLength()) {
+                break;
+            }
+
+            if (counter >= MAX_ATTEMPTS) {
+                // TODO Metric.
+                // Could not find any match in max attempts, just return
+                // the 2 parents.
+                return new ChromosomePair(first, second);
+            }
+            counter++;
+        }
 
         // array representations of the parents
         final List<T> parent1Rep = first.getRepresentation();
@@ -81,6 +110,8 @@ public class OnePointVariableLengthCrossover<T> implements CrossoverPolicy {
 
         child2Rep.addAll(parent2Rep.subList(0, crossoverIndexParent2));
         child2Rep.addAll(parent1Rep.subList(crossoverIndexParent1, lengthParent1));
+
+        // Both children need to have valid chromosomes (length)
 
         return new ChromosomePair(first.newFixedLengthChromosome(child1Rep),
                 second.newFixedLengthChromosome(child2Rep));

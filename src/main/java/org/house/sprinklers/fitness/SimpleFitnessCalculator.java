@@ -16,7 +16,7 @@ public class SimpleFitnessCalculator implements FitnessCalculator {
         final double percentOutside = Math.min(1, input.getOutsideArea() / terrainArea);
         final double percentOverlap = Math.min(1, input.getOverlapArea() / terrainArea);
 
-        final double weightInside = 1.0, weightOutside = 2.0, weightOverlap = 0.25;
+        final double weightInside = 1.0, weightOutside = 2.0, weightOverlap = 4.0;
 
         return Math.max(0, weightInside * percentCover - weightOutside * percentOutside - weightOverlap * percentOverlap);
     }

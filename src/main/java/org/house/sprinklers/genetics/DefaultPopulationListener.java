@@ -24,7 +24,7 @@ public class DefaultPopulationListener implements PopulationListener {
     }
 
     @Override
-    public void onPopulation(Population current, final int generation) {
+    public void onPopulation(Population current, final int generation, long durationInMillis) {
         recorderService.increment(MetricsConstants.COUNTER_GA_INDIVIDUALS, current.getPopulationSize());
 
         computeAndSubmitFitnessMetric(current, generation);
@@ -34,14 +34,14 @@ public class DefaultPopulationListener implements PopulationListener {
         final SprinklersChromosome fittestChromosome = (SprinklersChromosome) current.getFittestChromosome();
         gameRenderer.setSprinklers(fittestChromosome.getRepresentation());
 
-        log.info("Completed generation {}", generation);
+        log.info("Completed generation {} in {}ms", generation, durationInMillis);
     }
 
     private void computeAndSubmitDiversityMetric(Population current, int generation) {
         // Compute average fitness
         final double fitness = computePopulationFitness(current);
         //
-        final double v0 = StreamSupport.stream(current.spliterator(), false)
+        final double v0 = StreamSupport.stream(current.spliterator(), true)
                 .mapToDouble((x) -> (fitness - x.getFitness()) * (fitness -x.getFitness()))
                 .sum();
         final double dev = Math.sqrt(v0 / current.getPopulationLimit());
@@ -56,14 +56,14 @@ public class DefaultPopulationListener implements PopulationListener {
     }
 
     private double computePopulationFitness(Population current) {
-        return StreamSupport.stream(current.spliterator(), false)
+        return StreamSupport.stream(current.spliterator(), true)
                     .mapToDouble(Chromosome::getFitness)
                     .sum() / current.getPopulationSize();
     }
 
     @SuppressWarnings("unchecked")
     private void computeAndSubmitCoveredAreaMetric(Population current, int generation) {
-        double generationCoveredArea = StreamSupport.stream(current.spliterator(), false)
+        double generationCoveredArea = StreamSupport.stream(current.spliterator(), true)
                 .mapToDouble(c -> {
                     if (c instanceof DataAwareChromosome) {
                         DataAwareChromosome<FitnessInput> dac = (DataAwareChromosome<FitnessInput>) c;

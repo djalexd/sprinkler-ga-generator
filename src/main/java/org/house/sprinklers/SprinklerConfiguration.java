@@ -9,6 +9,7 @@ import org.apache.commons.math3.genetics.MutationPolicy;
 import org.apache.commons.math3.genetics.OnePointVariableLengthCrossover;
 import org.apache.commons.math3.genetics.Population;
 import org.apache.commons.math3.genetics.RandomGeneMutation;
+import org.house.sprinklers.fitness.PolygonIntersectionCalculatorSync;
 import org.house.sprinklers.genetics.SmallChangeGeneGenerator;
 import org.apache.commons.math3.genetics.TournamentSelection;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -61,8 +62,13 @@ public class SprinklerConfiguration {
     }
 
     @Bean
+    PolygonIntersectionCalculatorSync polygonIntersectionCalculator() {
+        return new PolygonIntersectionCalculatorSync(executorService, recorderService());
+    }
+
+    @Bean
     FitnessInputCalculator fitnessInputCalculator() {
-        return new FitnessInputCalculator(executorService, recorderService());
+        return new FitnessInputCalculator(polygonIntersectionCalculator(), recorderService());
     }
 
     @Bean
@@ -104,7 +110,10 @@ public class SprinklerConfiguration {
 
     @Bean
     CrossoverPolicy crossover() {
-        return new OnePointVariableLengthCrossover<>(geneticAlgorithmProperties.getCrossover().getMinimumLength(), recorderService());
+        return new OnePointVariableLengthCrossover<>(
+                geneticAlgorithmProperties.getCrossover(),
+                geneticAlgorithmProperties.getChromosome(),
+                recorderService());
     }
 
     @SuppressWarnings("unchecked")
@@ -140,7 +149,8 @@ public class SprinklerConfiguration {
                 validator,
                 fitnessCalculator,
                 fitnessInputCalculator,
-                terrain);
+                terrain,
+                geneticAlgorithmProperties.getChromosome());
     }
 
     private List<Sprinkler> randomSprinklers(Function<Sprinkler, Sprinkler> geneGenerator) {

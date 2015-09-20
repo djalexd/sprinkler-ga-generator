@@ -28,6 +28,7 @@ public class InMemorySprinklerMetricsExtractor {
         final double invScale = 1.0 / 1000000;
         final List<Integer> execTimes = recorderService.getMetricValues(MetricsConstants.METRIC_SPRINKLER_TERRAIN_INTERSECTION);
         return execTimes.stream()
+                .filter(x -> x != null)
                 .mapToDouble(x -> x * invScale)
                 .sum();
     }

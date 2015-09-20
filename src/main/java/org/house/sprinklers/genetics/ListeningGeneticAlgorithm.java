@@ -18,9 +18,6 @@ public class ListeningGeneticAlgorithm extends GeneticAlgorithm {
 
     private PopulationListener populationListener;
 
-    /** the number of generations evolved to reach {@link StoppingCondition} in the last run. */
-    private int generationsEvolved = 0;
-
     private RecorderService recorderService;
 
     public ListeningGeneticAlgorithm(CrossoverPolicy crossoverPolicy,
@@ -38,10 +35,14 @@ public class ListeningGeneticAlgorithm extends GeneticAlgorithm {
     @Override
     public Population evolve(Population initial, StoppingCondition condition) {
         Population current = initial;
-        generationsEvolved = 0;
+        /* TODO PopulationListener is not called for initial population */
+        /* the number of generations evolved to reach {@link StoppingCondition} in the last run. */
+        int generationsEvolved = 0;
         while (!condition.isSatisfied(current)) {
-            populationListener.onPopulation(current, generationsEvolved);
+            long start = System.currentTimeMillis();
             current = nextGeneration(current);
+            long end = System.currentTimeMillis();
+            populationListener.onPopulation(current, generationsEvolved, end - start);
             generationsEvolved++;
         }
 
